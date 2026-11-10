@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipt Vault</title>
+<style>
+:root{
+  --paper:#fff; --ledger:#f1f4f2; --ink:#16201c; --muted:#5d6b65; --rule:#d3dad6;
+  --accent:#0d6b57; --accent-ink:#fff; --review:#fff3d6; --review-ink:#8a4b05; --danger:#b3261e;
+  --focus:#1a73e8;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#121715; --ledger:#1a211e; --ink:#e8efeb; --muted:#9baba4; --rule:#2c3733; --accent:#46c4a5; --accent-ink:#06231b; --review:#3a2d0f; --review-ink:#f2c46b; --danger:#ff8a80; --focus:#8ab4f8;}
+}
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header.top{border-bottom:1px solid var(--rule)}
+header.top .wrap{display:flex;align-items:center;gap:16px;height:56px}
+.brand{font-weight:700;font-size:18px;letter-spacing:-.01em;margin-right:auto}
+.muted{color:var(--muted)}
+.btn{border:1px solid var(--rule);background:var(--paper);padding:7px 12px;border-radius:6px;cursor:pointer}
+.btn:hover{background:var(--ledger)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.link{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer}
+input,select{border:1px solid var(--rule);background:var(--paper);padding:6px 8px;border-radius:6px;min-width:0}
+
+/* auth */
+.auth{max-width:380px;margin:12vh auto;padding:0 20px}
+.auth h1{font-size:28px;letter-spacing:-.02em;margin:0 0 6px}
+.auth form{display:grid;gap:10px;margin-top:20px}
+.auth label{display:grid;gap:4px;font-weight:600}
+.err{color:var(--danger);min-height:1.4em;margin:0}
+
+/* connect */
+.connect{background:var(--ledger);border-bottom:1px solid var(--rule)}
+.connect .wrap{padding-top:14px;padding-bottom:14px}
+.connect summary{cursor:pointer;font-weight:600}
+.connect ol{margin:10px 0 10px 18px;padding:0}
+.urlrow{display:flex;gap:8px;margin:8px 0}
+.urlrow input{flex:1;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+
+/* toolbar */
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:18px 0 14px}
+.tools .grow{flex:1}
+.chk{display:flex;gap:6px;align-items:center}
+
+/* summary */
+.sum{display:grid;gap:18px;padding:4px 0 18px}
+.cur{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:28px;align-items:start;border-top:1px solid var(--rule);padding-top:14px}
+.big{font-size:34px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.facts{display:flex;gap:18px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:130px 1fr 90px;gap:10px;align-items:center;font-variant-numeric:tabular-nums}
+.bar i{display:block;height:10px;background:var(--accent);border-radius:2px;min-width:2px}
+.bar span:last-child{text-align:right}
+.empty{padding:40px 0;color:var(--muted)}
+
+/* ledger table */
+.tablewrap{overflow-x:auto;border-top:2px solid var(--ink)}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th{text-align:left;font-weight:600;color:var(--muted);padding:10px 6px;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:4px 4px;border-bottom:1px solid var(--rule);vertical-align:middle}
+td input,td select{width:100%;border-color:transparent;background:transparent;padding:6px 6px}
+td input:hover,td select:hover{border-color:var(--rule)}
+td input:focus,td select:focus{background:var(--paper);border-color:var(--focus)}
+td.num input{text-align:right;font-variant-numeric:tabular-nums}
+tr.review{background:var(--review)}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--review);color:var(--review-ink);border:1px solid var(--review-ink);font-size:12px;font-weight:600;white-space:nowrap}
+.src{font-size:12px;color:var(--muted)}
+.rowact{display:flex;gap:6px;align-items:center;justify-content:flex-end;white-space:nowrap}
+.del{color:var(--danger)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:6px;opacity:0;transition:opacity .15s;pointer-events:none}
+.toast.on{opacity:1}
+[hidden]{display:none!important}
+@media (max-width:760px){.cur{grid-template-columns:1fr}.bar{grid-template-columns:100px 1fr 80px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main id="authView" class="auth" hidden>
+  <h1>Receipt Vault</h1>
+  <p class="muted">Send a receipt photo to Claude. It lands here, ready to check, fix and export.</p>
+  <form id="authForm">
+    <label>Email <input id="email" type="email" autocomplete="email" required></label>
+    <label>Password <input id="password" type="password" autocomplete="current-password" minlength="8" required></label>
+    <p class="err" id="authErr" role="alert"></p>
+    <button class="btn primary" id="authBtn" type="submit">Sign in</button>
+    <button class="btn link" id="authToggle" type="button">New here? Create an account</button>
+  </form>
+</main>
+
+<div id="appView" hidden>
+  <header class="top"><div class="wrap">
+    <span class="brand">Receipt Vault</span>
+    <span class="muted" id="who"></span>
+    <button class="btn" id="logout">Sign out</button>
+  </div></header>
+
+  <section class="connect"><div class="wrap">
+    <details id="connectBox">
+      <summary>Connect Claude</summary>
+      <ol>
+        <li>In Claude, open Settings, then Connectors, then Add custom connector.</li>
+        <li>Name it Receipt Vault and paste this link. Treat it like a password.</li>
+        <li>In a chat, attach a receipt photo and say: "Add this to my Receipt Vault."</li>
+      </ol>
+      <div class="urlrow">
+        <input id="mcpUrl" readonly aria-label="Your private connector link">
+        <button class="btn" id="copyUrl">Copy link</button>
+        <button class="btn" id="rotate">Make a new link</button>
+      </div>
+      <div class="muted">Making a new link disconnects the old one.</div>
+    </details>
+  </div></section>
+
+  <main class="wrap">
+    <div class="tools">
+      <label class="muted">Month <input id="month" type="month"></label>
+      <button class="btn" id="allTime">All time</button>
+      <input id="search" type="search" placeholder="Search vendor or notes" aria-label="Search">
+      <select id="catFilter" aria-label="Category filter"><option value="">All categories</option></select>
+      <label class="chk"><input type="checkbox" id="onlyReview"> Needs review only</label>
+      <span class="grow"></span>
+      <button class="btn" id="addManual">Add row</button>
+      <button class="btn primary" id="export">Export CSV</button>
+    </div>
+    <div class="sum" id="sum"></div>
+    <div id="list"></div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let cats = [], mode = 'login', timer;
+const thisMonth = new Date().toISOString().slice(0, 7);
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  if (r.status === 401 && path !== '/api/login' && path !== '/api/signup') { showAuth(); throw new Error('Sign in required.'); }
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || 'Request failed.');
+  return data;
+}
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(timer); timer = setTimeout(() => t.classList.remove('on'), 1800); }
+const money = (n, c) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: c }).format(n); } catch { return c + ' ' + n.toFixed(2); } };
+function el(tag, props = {}, ...kids) {
+  const e = Object.assign(document.createElement(tag), props);
+  kids.flat().forEach(k => e.append(k));
+  return e;
+}
+
+/* ---- auth ---- */
+function showAuth() { $('#appView').hidden = true; $('#authView').hidden = false; }
+$('#authToggle').onclick = () => {
+  mode = mode === 'login' ? 'signup' : 'login';
+  $('#authBtn').textContent = mode === 'login' ? 'Sign in' : 'Create account';
+  $('#authToggle').textContent = mode === 'login' ? 'New here? Create an account' : 'Have an account? Sign in';
+  $('#password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  $('#authErr').textContent = '';
+};
+$('#authForm').onsubmit = async e => {
+  e.preventDefault(); $('#authErr').textContent = '';
+  try { await api('/api/' + mode, { method: 'POST', body: { email: $('#email').value, password: $('#password').value } }); await boot(); }
+  catch (err) { $('#authErr').textContent = err.message; }
+};
+$('#logout').onclick = async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); showAuth(); };
+
+/* ---- connect ---- */
+$('#copyUrl').onclick = async () => { $('#mcpUrl').select(); try { await navigator.clipboard.writeText($('#mcpUrl').value); toast('Link copied'); } catch { toast('Press Ctrl+C to copy'); } };
+$('#rotate').onclick = async () => {
+  if (!confirm('Make a new link? Claude will be disconnected until you add the new one.')) return;
+  $('#mcpUrl').value = (await api('/api/rotate-token', { method: 'POST' })).mcpUrl; toast('New link ready');
+};
+
+/* ---- data ---- */
+function query() {
+  const p = new URLSearchParams();
+  if ($('#month').value) p.set('month', $('#month').value);
+  if ($('#search').value) p.set('search', $('#search').value);
+  if ($('#catFilter').value) p.set('category', $('#catFilter').value);
+  if ($('#onlyReview').checked) p.set('needs_review', 'true');
+  return p;
+}
+async function refresh() {
+  const month = $('#month').value;
+  const [list, sum] = await Promise.all([api('/api/expenses?' + query()), api('/api/summary?month=' + month)]);
+  renderSummary(sum); renderList(list.rows);
+}
+function renderSummary(s) {
+  const box = $('#sum'); box.replaceChildren();
+  s.totals.forEach(t => {
+    const max = Math.max(...t.byCategory.map(c => c.amount), 1);
+    box.append(el('div', { className: 'cur' },
+      el('div', {}, el('div', { className: 'big' }, money(t.total, t.currency)),
+        el('div', { className: 'facts' }, el('span', {}, t.count + (t.count === 1 ? ' receipt' : ' receipts')), el('span', {}, 'Tax ' + money(t.tax, t.currency)), el('span', {}, 'Net ' + money(t.net, t.currency)))),
+      el('div', { className: 'bars' }, t.byCategory.map(c => el('div', { className: 'bar' }, el('span', {}, c.category), (() => { const i = el('i'); i.style.width = (c.amount / max * 100) + '%'; return el('span', {}, i); })(), el('span', {}, money(c.amount, t.currency)))))));
+  });
+  if (s.needsReview) box.prepend(el('div', {}, el('span', { className: 'badge' }, s.needsReview + ' to review'), ' ', el('span', { className: 'muted' }, 'Claude added these. Check each row, then confirm it.')));
+}
+function field(e, key, type, extra = {}) {
+  const i = el('input', { type, value: e[key] ?? '', ...extra });
+  i.setAttribute('aria-label', key + ' for ' + e.vendor);
+  i.onchange = () => save(e.id, { [key]: type === 'number' ? i.value : i.value }, i);
+  return i;
+}
+async function save(id, patch, input) {
+  try { await api('/api/expenses/' + id, { method: 'PATCH', body: patch }); toast('Saved'); await refresh(); }
+  catch (err) { toast(err.message); if (input) input.style.borderColor = 'var(--danger)'; }
+}
+function renderList(rows) {
+  const box = $('#list'); box.replaceChildren();
+  if (!rows.length) { box.append(el('div', { className: 'empty' }, 'No expenses here yet. Attach a receipt photo in Claude and ask it to add it to your Receipt Vault, or use Add row.')); return; }
+  const head = el('tr', {}, ['Date', 'Vendor', 'Category', 'Cur', 'Total', 'Tax', 'Notes', 'Status', ''].map(h => el('th', {}, h)));
+  const body = rows.map(e => {
+    const sel = el('select', {}, cats.map(c => el('option', { value: c, selected: c === e.category }, c)));
+    sel.setAttribute('aria-label', 'category for ' + e.vendor);
+    sel.onchange = () => save(e.id, { category: sel.value });
+    const status = e.reviewed ? el('span', { className: 'src' }, e.source === 'claude' ? 'Confirmed' : 'Manual')
+      : el('button', { className: 'btn', title: 'Mark as checked', onclick: () => save(e.id, { reviewed: true }) }, 'Confirm');
+    const del = el('button', { className: 'btn del', onclick: async () => { if (confirm('Delete ' + e.vendor + '?')) { await api('/api/expenses/' + e.id, { method: 'DELETE' }); toast('Deleted'); refresh(); } } }, 'Delete');
+    return el('tr', { className: e.reviewed ? '' : 'review' },
+      el('td', {}, field(e, 'date', 'date')), el('td', {}, field(e, 'vendor', 'text', { maxLength: 120 })), el('td', {}, sel),
+      el('td', { style: 'width:70px' }, field(e, 'currency', 'text', { maxLength: 3 })),
+      el('td', { className: 'num', style: 'width:110px' }, field(e, 'amount', 'number', { step: '0.01', min: 0 })),
+      el('td', { className: 'num', style: 'width:90px' }, field(e, 'tax', 'number', { step: '0.01', min: 0 })),
+      el('td', {}, field(e, 'notes', 'text', { maxLength: 500 })),
+      el('td', {}, status), el('td', {}, el('div', { className: 'rowact' }, del)));
+  });
+  box.append(el('div', { className: 'tablewrap' }, el('table', {}, el('thead', {}, head), el('tbody', {}, body))));
+}
+
+/* ---- toolbar ---- */
+let st; $('#search').oninput = () => { clearTimeout(st); st = setTimeout(refresh, 200); };
+['#month', '#catFilter', '#onlyReview'].forEach(s => $(s).onchange = refresh);
+$('#allTime').onclick = () => { $('#month').value = ''; refresh(); };
+$('#export').onclick = () => { location.href = '/api/export.csv?month=' + encodeURIComponent($('#month').value); };
+$('#addManual').onclick = async () => {
+  const vendor = prompt('Vendor name?'); if (!vendor) return;
+  try { await api('/api/expenses', { method: 'POST', body: { vendor, date: new Date().toISOString().slice(0, 10), amount: 0, category: 'Other' } }); $('#month').value = thisMonth; await refresh(); toast('Row added. Fill in the amount.'); }
+  catch (err) { toast(err.message); }
+};
+
+async function boot() {
+  try {
+    const me = await api('/api/me');
+    cats = me.categories; $('#who').textContent = me.email; $('#mcpUrl').value = me.mcpUrl;
+    $('#catFilter').replaceChildren(el('option', { value: '' }, 'All categories'), ...cats.map(c => el('option', { value: c }, c)));
+    if (!$('#month').value) $('#month').value = thisMonth;
+    $('#authView').hidden = true; $('#appView').hidden = false;
+    $('#connectBox').open = !localStorage.getItem('rv_connected');
+    await refresh();
+  } catch { showAuth(); }
+}
+$('#connectBox').addEventListener('toggle', () => { if (!$('#connectBox').open) localStorage.setItem('rv_connected', '1'); });
+boot();
+</script>
+</body>
+</html>

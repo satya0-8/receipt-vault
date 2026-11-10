@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: receipt-vault
+    runtime: node
+    plan: starter            # persistent disks need a paid instance (~$7/mo)
+    buildCommand: "echo no build"
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    disk:
+      name: vault-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: DEMO_EMAIL
+        value: reviewer@receiptvault.app
+      - key: DEMO_PASSWORD
+        sync: false           # set this in the Render dashboard
