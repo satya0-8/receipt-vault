@@ -133,8 +133,11 @@ function normalize(input, partial) {
   }
   if (has('payment_method')) out.payment_method = String(input.payment_method).trim().slice(0, 60);
   if (has('notes')) out.notes = String(input.notes).trim().slice(0, 500);
-  if (has('image_url')) out.image_url = String(input.image_url ?? '').trim();
-  else if (!partial) out.image_url = '';
+  if (has('image_url')) {
+    let rawImg = String(input.image_url ?? '').trim();
+    if (rawImg.length > 30000) rawImg = rawImg.slice(0, 30000); // Cap size to prevent database bloat
+    out.image_url = rawImg;
+  } else if (!partial) out.image_url = '';
   if (has('discrepancy')) out.discrepancy = String(input.discrepancy ?? '').trim().slice(0, 300);
   else if (!partial) out.discrepancy = '';
   if (has('policy_flag')) out.policy_flag = String(input.policy_flag ?? '').trim().slice(0, 300);
@@ -161,12 +164,17 @@ function normalize(input, partial) {
 
   if (out.amount !== undefined && out.tax !== undefined && out.tax > out.amount) throw new HttpError(400, 'tax cannot be larger than the total amount.');
 
-  // Auto-detect math discrepancy if items sum doesn't match total
+  // Auto-detect math discrepancy or tip if items sum doesn't match total
   if (out.items && out.items.length > 0 && out.amount) {
     const itemsSum = round2(out.items.reduce((acc, it) => acc + (it.amount || 0), 0));
     const expectedWithTax = round2(itemsSum + (out.tax || 0));
     if (Math.abs(expectedWithTax - out.amount) > 0.05 && Math.abs(itemsSum - out.amount) > 0.05 && !out.discrepancy) {
-      out.discrepancy = `Line items sum to ${itemsSum.toFixed(2)}, total is ${out.amount.toFixed(2)}`;
+      const diff = round2(out.amount - expectedWithTax);
+      if (out.category === 'Meals' && diff > 0 && diff <= round2(itemsSum * 0.35)) {
+        out.discrepancy = `Likely tip/gratuity ($${diff.toFixed(2)}) added to items subtotal ($${itemsSum.toFixed(2)})`;
+      } else {
+        out.discrepancy = `Line items sum to ${itemsSum.toFixed(2)}, total is ${out.amount.toFixed(2)}`;
+      }
     }
   }
   // Auto-detect discrepancy keywords from notes (e.g. Claude detected math mismatch)
@@ -640,18 +648,19 @@ function callTool(user, name, a = {}) {
       const totalEligibleDeduction = fullDeductible + eligibleHalf;
       const periodLabel = a.month || a.year || 'All Time';
 
-      let out = `📋 Tax Deduction & VAT/GST Schedule (${periodLabel}):\n`;
+      let out = `📋 Suggested Tax Treatment & VAT/GST Schedule (${periodLabel}):\n`;
+      out += `(Preliminary estimate based on common schedules — confirm with a qualified CPA / tax accountant for your jurisdiction)\n\n`;
       out += `• Total Gross Spend: $${(fullDeductible + halfDeductible + nonDeductible).toFixed(2)}\n`;
-      out += `• Total Eligible Tax Deduction: $${totalEligibleDeduction.toFixed(2)}\n`;
+      out += `• Estimated Eligible Tax Deduction: $${totalEligibleDeduction.toFixed(2)}\n`;
       out += `• Itemized VAT/GST Input Tax Credits (Recoverable): $${totalVatGst.toFixed(2)}\n\n`;
 
-      out += `Deduction Breakdown by Schedule:\n`;
-      out += `  - Standard Business (100% Deductible): $${fullDeductible.toFixed(2)} (Travel, Software, Supplies, Utilities)\n`;
-      out += `  - Meals & Entertainment (50% Deductible): $${halfDeductible.toFixed(2)} spent → $${eligibleHalf.toFixed(2)} eligible write-off\n`;
+      out += `Suggested Breakdown by Schedule:\n`;
+      out += `  - Standard Business Expenses (Typically 100% Deductible): $${fullDeductible.toFixed(2)} (Travel, Software, Supplies, Utilities)\n`;
+      out += `  - Meals & Client Entertainment (Typically 50% Deductible in US/UK rules): $${halfDeductible.toFixed(2)} spent → $${eligibleHalf.toFixed(2)} estimated eligible write-off\n`;
       if (nonDeductible > 0) {
         out += `  - Non-deductible / Personal: $${nonDeductible.toFixed(2)}\n`;
       }
-      out += `\nRecommendation: Export as CSV for accountant attachment to corporate tax filing.`;
+      out += `\nNote: Export as CSV and review with your company tax advisor before filing.`;
       return out;
     }
     case 'audit_anomalies': {
@@ -696,7 +705,7 @@ function callTool(user, name, a = {}) {
             anomalies.push({
               risk: 'MEDIUM',
               type: 'Policy Evasion (Split Structuring)',
-              details: `${group[0].vendor} on ${group[0].date}: ${group.length} split receipts totaling $${sum.toFixed(2)} bypassing $75 cap`
+              details: `${group[0].vendor} on ${group[0].date}: ${group.length} split receipts totaling $${sum.toFixed(2)} bypassing $75 unapproved micro-procurement threshold`
             });
           }
         }
@@ -717,11 +726,12 @@ function callTool(user, name, a = {}) {
         }
       });
 
-      // 4. Any existing math discrepancies or policy flags
+      // 4. Any existing math discrepancies or policy flags (contextualize tips)
       rows.filter(e => e.discrepancy).forEach(e => {
+        const isTip = /tip|gratuity/i.test(e.discrepancy);
         anomalies.push({
-          risk: 'HIGH',
-          type: 'Math Discrepancy',
+          risk: isTip ? 'LOW' : 'HIGH',
+          type: isTip ? 'Likely Tip / Gratuity' : 'Math Discrepancy',
           details: `#${e.id} ${e.vendor}: ${e.discrepancy}`
         });
       });

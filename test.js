@@ -74,7 +74,7 @@ server.listen(0, async () => {
     assert.ok(batchRes.content[0].text.includes('Batch Ingestion Complete: 2 saved'), batchRes.content[0].text);
 
     const taxRes = await tool('tax_deduction_report', { month: '2026-11' });
-    assert.ok(taxRes.content[0].text.includes('Tax Deduction & VAT/GST Schedule'), taxRes.content[0].text);
+    assert.ok(taxRes.content[0].text.includes('Suggested Tax Treatment & VAT/GST Schedule'), taxRes.content[0].text);
 
     const auditRes = await tool('audit_anomalies', { month: '2026-11' });
     assert.ok(auditRes.content[0].text.includes('Forensic Audit'), auditRes.content[0].text);
