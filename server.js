@@ -188,9 +188,11 @@ function deleteExpense(uid, id) {
   db.expenses.splice(i, 1);
   save();
 }
-function listExpenses(uid, { month, search, category, needs_review, flagged, limit } = {}) {
+function listExpenses(uid, { month, start_date, end_date, search, category, needs_review, flagged, limit } = {}) {
   let rows = mine(uid);
   if (month) rows = rows.filter(e => e.date.startsWith(month));
+  if (start_date) rows = rows.filter(e => e.date >= start_date);
+  if (end_date) rows = rows.filter(e => e.date <= end_date);
   if (category) rows = rows.filter(e => e.category.toLowerCase() === String(category).toLowerCase());
   if (needs_review !== undefined && needs_review !== '') rows = rows.filter(e => e.reviewed === !(needs_review === true || needs_review === 'true'));
   if (flagged === true || flagged === 'true') rows = rows.filter(e => !!(e.discrepancy || e.policy_flag));
@@ -203,8 +205,14 @@ function listExpenses(uid, { month, search, category, needs_review, flagged, lim
   if (limit) rows = rows.slice(0, Math.min(Number(limit) || 50, 500));
   return { total, rows: rows.map(pub) };
 }
-function summary(uid, month) {
-  const rows = mine(uid).filter(e => !month || e.date.startsWith(month));
+function summary(uid, filter = {}) {
+  const month = typeof filter === 'string' ? filter : (filter.month || '');
+  const start_date = typeof filter === 'object' ? (filter.start_date || '') : '';
+  const end_date = typeof filter === 'object' ? (filter.end_date || '') : '';
+  let rows = mine(uid);
+  if (month) rows = rows.filter(e => e.date.startsWith(month));
+  if (start_date) rows = rows.filter(e => e.date >= start_date);
+  if (end_date) rows = rows.filter(e => e.date <= end_date);
   const byCur = {};
   let totalTaxSum = 0;
   let flaggedCount = 0;
@@ -220,7 +228,7 @@ function summary(uid, month) {
     byCategory: Object.entries(c.byCategory).map(([category, amount]) => ({ category, amount: round2(amount) })).sort((a, b) => b.amount - a.amount),
   }));
   return {
-    month: month || 'all',
+    month: month || (start_date && end_date ? `${start_date} to ${end_date}` : 'all'),
     needsReview: rows.filter(e => !e.reviewed).length,
     flaggedCount,
     totalTax: round2(totalTaxSum),
@@ -282,7 +290,7 @@ const TOOLS = [
         tax: { type: 'number', description: 'Total tax/VAT/GST shown on the receipt. 0 if none shown.' },
         payment_method: { type: 'string', description: 'e.g. "Visa 4242", "Cash", "Corporate Card". Optional.' },
         notes: { type: 'string', description: 'Short note, business justification, or line item details. Optional.' },
-        image_url: { type: 'string', description: 'Public URL or base64 data URI of the bill photo / receipt image. Optional.' },
+        image_url: { type: 'string', description: 'Public URL, base64 data URI, or SVG bill markup (data:image/svg+xml;utf8,<svg ...>) of the receipt so it visually pins on the user\'s Notice Board. Optional.' },
         discrepancy: { type: 'string', description: 'Describe any math mismatches or printing errors on the receipt (e.g. line items total $42.50 but printed total is $45.00).' },
         policy_flag: { type: 'string', description: 'Corporate spend policy warning, e.g. "Meals exceed $75" or "Weekend spend".' },
         items: {
@@ -465,7 +473,7 @@ function rpc(user, msg) {
       return reply({
         protocolVersion: v, capabilities: { tools: { listChanged: false } },
         serverInfo: { name: 'receipt-vault', version: '1.0.0' },
-        instructions: 'Receipt Vault stores the user\'s expenses permanently. When the user shares a receipt photo, read it, then call add_expense once per receipt. Tell the user what you saved and that they can review and edit it in the Receipt Vault web app. Never invent values you cannot read; ask instead.',
+        instructions: 'Receipt Vault stores the user\'s expenses permanently. When the user shares a receipt photo, read it, then call add_expense once per receipt. Always pass image_url if a URL or data URI is available, or generate an SVG data URI (data:image/svg+xml;utf8,<svg ...>) depicting the realistic bill slip with items and totals so it renders visually on their Notice Board. Tell the user what you saved and that they can review and edit it in the Receipt Vault web app. Never invent values you cannot read; ask instead.',
       });
     }
     case 'ping': return reply({});
@@ -563,7 +571,7 @@ const server = http.createServer(async (req, res) => {
       const em = /^\/api\/expenses\/(\d+)$/.exec(p);
       if (em && req.method === 'PATCH') return send(res, 200, updateExpense(user.id, em[1], await json()));
       if (em && req.method === 'DELETE') { deleteExpense(user.id, em[1]); return send(res, 200, { ok: true }); }
-      if (p === '/api/summary') return send(res, 200, summary(user.id, url.searchParams.get('month') || ''));
+      if (p === '/api/summary') return send(res, 200, summary(user.id, Object.fromEntries(url.searchParams)));
       if (p === '/api/upload' && req.method === 'POST') {
         const b = await json();
         if (!b.data || !b.data.startsWith('data:image/')) throw new HttpError(400, 'Invalid image data');

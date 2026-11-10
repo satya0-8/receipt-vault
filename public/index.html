@@ -1,1336 +1,1974 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Receipt Vault — Enterprise MCP Expense Ledger</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --surface-subtle: #f1f5f9;
-  --border: #e2e8f0;
-  --border-focus: #0f766e;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --accent: #0f766e;
-  --accent-light: #ccfbf1;
-  --accent-ink: #ffffff;
-  --warn-bg: #fffbeb;
-  --warn-border: #fde68a;
-  --warn-ink: #b45309;
-  --danger-bg: #fef2f2;
-  --danger-border: #fecaca;
-  --danger-ink: #e11d48;
-  --success-bg: #f0fdf4;
-  --success-border: #bbf7d0;
-  --success-ink: #166534;
-  --board-bg: #f5efe6;
-  --board-grid: rgba(180, 160, 140, 0.15);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-pin: 0 10px 20px -3px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.06);
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receipt Vault — Expense Ledger & Notice Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-subtle: #f1f5f9;
+      --border: #e2e8f0;
+      --border-focus: #0f766e;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #0f766e;
+      --accent-light: #ccfbf1;
+      --accent-ink: #ffffff;
+      --warn-bg: #fffbeb;
+      --warn-border: #fde68a;
+      --warn-ink: #b45309;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --danger-ink: #e11d48;
+      --success-bg: #f0fdf4;
+      --success-border: #bbf7d0;
+      --success-ink: #166534;
+      --board-bg: #f4ede4;
+      --board-grid: rgba(180, 160, 140, 0.2);
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-pin: 0 10px 25px -4px rgba(0, 0, 0, 0.14), 0 4px 6px -2px rgba(0, 0, 0, 0.06);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #090d16;
-    --surface: #111827;
-    --surface-subtle: #1f2937;
-    --border: #374151;
-    --border-focus: #2dd4bf;
-    --text: #f9fafb;
-    --text-muted: #9ca3af;
-    --accent: #14b8a6;
-    --accent-light: #134e4a;
-    --accent-ink: #042f2e;
-    --warn-bg: #451a03;
-    --warn-border: #78350f;
-    --warn-ink: #fde68a;
-    --danger-bg: #4c0519;
-    --danger-border: #881337;
-    --danger-ink: #fecdd3;
-    --success-bg: #052e16;
-    --success-border: #14532d;
-    --success-ink: #bbf7d0;
-    --board-bg: #1c1917;
-    --board-grid: rgba(255, 255, 255, 0.05);
-  }
-}
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #090d16;
+        --surface: #111827;
+        --surface-subtle: #1f2937;
+        --border: #374151;
+        --border-focus: #2dd4bf;
+        --text: #f9fafb;
+        --text-muted: #9ca3af;
+        --accent: #14b8a6;
+        --accent-light: #134e4a;
+        --accent-ink: #042f2e;
+        --warn-bg: #451a03;
+        --warn-border: #78350f;
+        --warn-ink: #fde68a;
+        --danger-bg: #4c0519;
+        --danger-border: #881337;
+        --danger-ink: #fecdd3;
+        --success-bg: #052e16;
+        --success-border: #14532d;
+        --success-ink: #bbf7d0;
+        --board-bg: #1c1917;
+        --board-grid: rgba(255, 255, 255, 0.05);
+      }
+    }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-button, input, select {
-  font-family: inherit;
-  font-size: inherit;
-  color: inherit;
-}
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.wrap { max-width: 1320px; margin: 0 auto; padding: 0 24px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
 
-/* Top Header */
-header.top {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 40;
-}
-header.top .wrap {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  height: 64px;
-}
-.brand-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-right: auto;
-}
-.brand-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 800;
-  font-size: 16px;
-  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.3);
-}
-.brand-name {
-  font-weight: 800;
-  font-size: 18px;
-  letter-spacing: -0.02em;
-  color: var(--text);
-}
-.volopay-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--accent-light);
-  color: var(--accent);
-  border: 1px solid rgba(15, 118, 110, 0.2);
-  padding: 3px 9px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.user-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--surface-subtle);
-  padding: 5px 12px;
-  border-radius: 9999px;
-  border: 1px solid var(--border);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-.btn:hover { background: var(--surface-subtle); border-color: var(--text-muted); }
-.btn.primary {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-color: var(--accent);
-  box-shadow: 0 1px 3px rgba(15, 118, 110, 0.3);
-}
-.btn.primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.btn.danger { color: var(--danger-ink); border-color: var(--danger-border); }
-.btn.danger:hover { background: var(--danger-bg); }
-.btn.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
-.btn.link { border: 0; background: none; color: var(--accent); padding: 0; text-decoration: underline; }
+    button,
+    input,
+    select {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
 
-/* View Switcher */
-.view-switcher {
-  display: flex;
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 3px;
-  gap: 3px;
-}
-.view-switcher button {
-  border: none;
-  background: transparent;
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--text-muted);
-  transition: all 0.15s ease;
-}
-.view-switcher button.active {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: var(--shadow-sm);
-}
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
 
-/* Auth Screen */
-.auth-box {
-  max-width: 420px;
-  margin: 10vh auto;
-  padding: 36px 32px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-}
-.auth-box h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
-.auth-box p { color: var(--text-muted); margin-bottom: 24px; font-size: 14px; }
-.auth-box form { display: grid; gap: 16px; }
-.auth-box label { display: grid; gap: 6px; font-weight: 600; font-size: 13px; }
-.auth-box input {
-  border: 1px solid var(--border);
-  background: var(--surface-subtle);
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-}
-.auth-box input:focus { border-color: var(--border-focus); background: var(--surface); }
-.auth-err { color: var(--danger-ink); font-weight: 600; font-size: 13px; min-height: 1.4em; }
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
 
-/* Connect Drawer */
-.connect-drawer {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-.connect-drawer details { padding: 14px 0; }
-.connect-drawer summary {
-  cursor: pointer;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  user-select: none;
-  font-size: 13px;
-  color: var(--accent);
-}
-.connect-content {
-  margin-top: 14px;
-  padding: 18px 20px;
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  display: grid;
-  gap: 16px;
-}
-.connect-url-row { display: flex; gap: 8px; align-items: center; }
-.connect-url-row input {
-  flex: 1;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 9px 12px;
-  border-radius: var(--radius-sm);
-  color: var(--text);
-}
-.prompt-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.prompt-chip {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.prompt-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    /* Top Header */
+    header.top {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
 
-/* KPI Stats Dashboard */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin: 24px 0 20px;
-}
-.kpi-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
-}
-.kpi-card.highlight { border-left: 4px solid var(--warn-ink); }
-.kpi-card.alert { border-left: 4px solid var(--danger-ink); }
-.kpi-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
-.kpi-val { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--text); }
-.kpi-sub { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    header.top .wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 64px;
+    }
 
-/* Category Breakdown Bars */
-.cat-breakdown {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  margin-bottom: 24px;
-}
-.cat-bars { display: grid; gap: 8px; margin-top: 12px; }
-.cat-bar-row {
-  display: grid;
-  grid-template-columns: 140px 1fr 90px;
-  gap: 12px;
-  align-items: center;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-.bar-track { height: 8px; background: var(--surface-subtle); border-radius: 4px; overflow: hidden; }
-.bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent) 0%, #14b8a6 100%); border-radius: 4px; transition: width 0.3s ease; }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-right: auto;
+    }
 
-/* Toolbar */
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  margin-bottom: 16px;
-}
-.toolbar input, .toolbar select {
-  border: 1px solid var(--border);
-  background: var(--surface-subtle);
-  padding: 7px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-}
-.toolbar input:focus, .toolbar select:focus { background: var(--surface); border-color: var(--border-focus); }
-.grow { flex: 1; }
-.chip-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid transparent;
-  user-select: none;
-}
-.chip-toggle:hover { background: var(--surface-subtle); }
-.chip-toggle input { cursor: pointer; }
+    .brand-name {
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
 
-/* Export Dropdown */
-.export-menu { position: relative; display: inline-block; }
-.export-dropdown {
-  display: none;
-  position: absolute;
-  right: 0;
-  top: 100%;
-  margin-top: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  min-width: 230px;
-  z-index: 50;
-  padding: 6px;
-}
-.export-dropdown.open { display: block; }
-.export-item {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  color: var(--text);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.export-item:hover { background: var(--surface-subtle); }
-.export-item-title { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; }
-.export-item-sub { font-size: 11px; color: var(--text-muted); }
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-subtle);
+      padding: 5px 12px;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
 
-/* Table View */
-.table-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  margin-bottom: 40px;
-}
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 1020px; font-size: 13px; }
-th {
-  background: var(--surface-subtle);
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 12px 10px;
-  border-bottom: 1px solid var(--border);
-  text-align: left;
-  white-space: nowrap;
-}
-td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-tr:hover td { background: rgba(0,0,0,0.015); }
-tr.is-review { background: var(--warn-bg); }
-tr.is-flagged { border-left: 3px solid var(--danger-ink); }
-td input, td select {
-  width: 100%;
-  border: 1px solid transparent;
-  background: transparent;
-  padding: 6px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-}
-td input:hover, td select:hover { border-color: var(--border); background: var(--surface); }
-td input:focus, td select:focus { border-color: var(--border-focus); background: var(--surface); outline: none; }
-td.num input { text-align: right; font-variant-numeric: tabular-nums; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
 
-/* 📌 FLOATING NOTICE BOARD VIEW */
-#boardView {
-  background: var(--board-bg);
-  background-image: radial-gradient(var(--board-grid) 1px, transparent 1px);
-  background-size: 20px 20px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  margin-bottom: 40px;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,0.04);
-  min-height: 540px;
-}
-.board-months {
-  display: flex;
-  gap: 24px;
-  overflow-x: auto;
-  padding-bottom: 16px;
-  align-items: flex-start;
-}
-.board-month-column {
-  flex: 0 0 340px;
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(8px);
-  border: 1px dashed rgba(120, 100, 80, 0.3);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  min-height: 480px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: relative;
-}
-.month-col-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  border-bottom: 2px dashed rgba(120, 100, 80, 0.25);
-  padding-bottom: 8px;
-  user-select: none;
-}
-.month-col-title {
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: -0.01em;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.month-col-total {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--accent);
-}
-.board-cards-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
+    .btn:hover {
+      background: var(--surface-subtle);
+      border-color: var(--text-muted);
+    }
 
-/* Tactile Pinned Bill Note */
-.pinned-bill {
-  background: #ffffff;
-  border-radius: 4px;
-  padding: 16px 14px 14px;
-  box-shadow: var(--shadow-pin);
-  position: relative;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
-  cursor: grab;
-  color: #17212b;
-  border: 1px solid rgba(0,0,0,0.08);
-}
-.pinned-bill:active { cursor: grabbing; transform: scale(1.03) !important; z-index: 100; }
-.pinned-bill:hover { transform: translateY(-3px) scale(1.01) !important; box-shadow: 0 16px 28px -4px rgba(0,0,0,0.18); }
+    .btn.primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-color: var(--accent);
+      box-shadow: 0 1px 3px rgba(15, 118, 110, 0.3);
+    }
 
-/* Realistic Pushpin */
-.note-pin {
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #f87171, #dc2626 70%, #991b1b);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.8);
-  z-index: 10;
-}
-.note-pin.gold {
-  background: radial-gradient(circle at 35% 35%, #fbbf24, #d97706 70%, #92400e);
-}
+    .btn.primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
 
-/* Bill Image Container */
-.bill-photo-wrap {
-  margin: 8px 0;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  max-height: 180px;
-  position: relative;
-  cursor: pointer;
-}
-.bill-photo-wrap img {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  display: block;
-  transition: transform 0.2s ease;
-}
-.bill-photo-wrap:hover img { transform: scale(1.04); }
-.bill-photo-badge {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  background: rgba(0,0,0,0.7);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  backdrop-filter: blur(4px);
-}
+    .btn.danger {
+      color: var(--danger-ink);
+      border-color: var(--danger-border);
+    }
 
-/* Thermal Bill Mockup if No Image */
-.bill-thermal-mock {
-  background: #fafaf9;
-  border: 1px dashed #d6d3d1;
-  border-radius: 4px;
-  padding: 10px;
-  margin: 8px 0;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: #44403c;
-  text-align: center;
-}
-.bill-thermal-mock label {
-  cursor: pointer;
-  color: var(--accent);
-  font-weight: 700;
-  text-decoration: underline;
-  display: block;
-  margin-top: 4px;
-}
+    .btn.danger:hover {
+      background: var(--danger-bg);
+    }
 
-/* Discrepancy Caution Tape */
-.caution-tape {
-  position: absolute;
-  top: 14px;
-  right: -10px;
-  background: #fef08a;
-  color: #854d0e;
-  border: 1px dashed #ca8a04;
-  padding: 3px 8px;
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transform: rotate(4deg);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  z-index: 5;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+    .btn.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
 
-.bill-vendor {
-  font-weight: 800;
-  font-size: 15px;
-  color: #0f172a;
-  line-height: 1.2;
-}
-.bill-row-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-top: 4px;
-  font-size: 12px;
-  color: #64748b;
-}
-.bill-total-price {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 800;
-  font-size: 18px;
-  color: #0f172a;
-  margin-top: 4px;
-}
-.bill-tax-line {
-  font-size: 11px;
-  color: #64748b;
-  font-variant-numeric: tabular-nums;
-}
-.bill-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px dashed #e2e8f0;
-}
+    .btn.link {
+      border: 0;
+      background: none;
+      color: var(--accent);
+      padding: 0;
+      text-decoration: underline;
+    }
 
-/* Lightbox Modal */
-.lightbox-modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(6px);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.lightbox-modal.open { display: flex; }
-.lightbox-card {
-  max-width: 90vw;
-  max-height: 90vh;
-  position: relative;
-  background: #000;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-}
-.lightbox-card img {
-  max-width: 100%;
-  max-height: 85vh;
-  display: block;
-  object-fit: contain;
-}
-.lightbox-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(255,255,255,0.25);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.lightbox-close:hover { background: rgba(255,255,255,0.4); }
+    /* View Switcher */
+    .view-switcher {
+      display: flex;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      gap: 3px;
+    }
 
-/* Badges */
-.badge-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.badge-pill.warn { background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-border); }
-.badge-pill.danger { background: var(--danger-bg); color: var(--danger-ink); border: 1px solid var(--danger-border); }
-.badge-pill.success { background: var(--success-bg); color: var(--success-ink); border: 1px solid var(--success-border); }
-.audit-alert {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: var(--danger-bg);
-  color: var(--danger-ink);
-  font-size: 11px;
-  font-weight: 700;
-  cursor: help;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 28px;
-  transform: translateX(-50%);
-  background: #0f172a;
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 13px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-  z-index: 100;
-}
-.toast.on { opacity: 1; }
-[hidden] { display: none !important; }
-</style>
+    .view-switcher button {
+      border: none;
+      background: transparent;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+
+    .view-switcher button.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Auth Screen */
+    .auth-box {
+      max-width: 420px;
+      margin: 10vh auto;
+      padding: 36px 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+
+    .auth-box h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .auth-box p {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .auth-box form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .auth-box label {
+      display: grid;
+      gap: 6px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .auth-box input {
+      border: 1px solid var(--border);
+      background: var(--surface-subtle);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+    }
+
+    .auth-box input:focus {
+      border-color: var(--border-focus);
+      background: var(--surface);
+    }
+
+    .auth-err {
+      color: var(--danger-ink);
+      font-weight: 600;
+      font-size: 13px;
+      min-height: 1.4em;
+    }
+
+    /* Connect Drawer */
+    .connect-drawer {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .connect-drawer details {
+      padding: 14px 0;
+    }
+
+    .connect-drawer summary {
+      cursor: pointer;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .connect-content {
+      margin-top: 14px;
+      padding: 18px 20px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      display: grid;
+      gap: 16px;
+    }
+
+    .connect-url-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .connect-url-row input {
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text);
+    }
+
+    .prompt-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .prompt-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .prompt-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    /* KPI Stats Dashboard */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin: 24px 0 20px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card.highlight {
+      border-left: 4px solid var(--warn-ink);
+    }
+
+    .kpi-card.alert {
+      border-left: 4px solid var(--danger-ink);
+    }
+
+    .kpi-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .kpi-val {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Category Breakdown Bars */
+    .cat-breakdown {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      margin-bottom: 24px;
+    }
+
+    .cat-bars {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .cat-bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 90px;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bar-track {
+      height: 8px;
+      background: var(--surface-subtle);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent) 0%, #14b8a6 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+
+    .toolbar input,
+    .toolbar select {
+      border: 1px solid var(--border);
+      background: var(--surface-subtle);
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+    }
+
+    .toolbar input:focus,
+    .toolbar select:focus {
+      background: var(--surface);
+      border-color: var(--border-focus);
+    }
+
+    .grow {
+      flex: 1;
+    }
+
+    .chip-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .chip-toggle:hover {
+      background: var(--surface-subtle);
+    }
+
+    .chip-toggle input {
+      cursor: pointer;
+    }
+
+    /* 📅 Custom Interactive Calendar & Range Picker Popover */
+    .cal-picker-wrap {
+      position: relative;
+      display: inline-block;
+    }
+
+    .cal-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .cal-btn:hover {
+      border-color: var(--text-muted);
+      background: var(--surface-subtle);
+    }
+
+    .cal-popover {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+      width: 320px;
+      padding: 16px;
+      z-index: 60;
+    }
+
+    .cal-popover.open {
+      display: block;
+    }
+
+    .cal-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .cal-preset-pill {
+      border: 1px solid var(--border);
+      background: var(--surface-subtle);
+      color: var(--text);
+      padding: 4px 9px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .cal-preset-pill:hover,
+    .cal-preset-pill.active {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-color: var(--accent);
+    }
+
+    .cal-month-stepper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+
+    .cal-step-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .cal-step-btn:hover {
+      background: var(--surface-subtle);
+    }
+
+    .cal-months-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .cal-month-tile {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 7px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .cal-month-tile:hover {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .cal-month-tile.selected {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .cal-range-row {
+      border-top: 1px dashed var(--border);
+      padding-top: 12px;
+    }
+
+    .cal-range-inputs {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin: 6px 0 8px;
+    }
+
+    .cal-range-inputs input {
+      flex: 1;
+      padding: 5px 8px;
+      font-size: 11px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface-subtle);
+    }
+
+    /* Export Dropdown */
+    .export-menu {
+      position: relative;
+      display: inline-block;
+    }
+
+    .export-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      margin-top: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      min-width: 230px;
+      z-index: 50;
+      padding: 6px;
+    }
+
+    .export-dropdown.open {
+      display: block;
+    }
+
+    .export-item {
+      display: flex;
+      flex-direction: column;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .export-item:hover {
+      background: var(--surface-subtle);
+    }
+
+    .export-item-title {
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .export-item-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Table View */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1020px;
+      font-size: 13px;
+    }
+
+    th {
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: rgba(0, 0, 0, 0.015);
+    }
+
+    tr.is-review {
+      background: var(--warn-bg);
+    }
+
+    tr.is-flagged {
+      border-left: 3px solid var(--danger-ink);
+    }
+
+    td input,
+    td select {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+    }
+
+    td input:hover,
+    td select:hover {
+      border-color: var(--border);
+      background: var(--surface);
+    }
+
+    td input:focus,
+    td select:focus {
+      border-color: var(--border-focus);
+      background: var(--surface);
+      outline: none;
+    }
+
+    td.num input {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 📌 FLOATING NOTICE BOARD VIEW */
+    #boardView {
+      background: var(--board-bg);
+      background-image: radial-gradient(var(--board-grid) 1.2px, transparent 1.2px);
+      background-size: 22px 22px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 40px;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.06);
+      min-height: 580px;
+    }
+
+    .board-months {
+      display: flex;
+      gap: 26px;
+      overflow-x: auto;
+      padding-bottom: 20px;
+      align-items: flex-start;
+    }
+
+    .board-month-column {
+      flex: 0 0 350px;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(8px);
+      border: 1px dashed rgba(120, 100, 80, 0.35);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: relative;
+    }
+
+    .month-col-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px dashed rgba(120, 100, 80, 0.3);
+      padding-bottom: 10px;
+      user-select: none;
+    }
+
+    .month-col-title {
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .month-col-total {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--accent);
+    }
+
+    .board-cards-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Tactile Pinned Bill Note */
+    .pinned-bill {
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 16px 14px 14px;
+      box-shadow: var(--shadow-pin);
+      position: relative;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+      cursor: grab;
+      color: #17212b;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .pinned-bill:active {
+      cursor: grabbing;
+      transform: scale(1.03) !important;
+      z-index: 100;
+    }
+
+    .pinned-bill:hover {
+      transform: translateY(-3px) scale(1.01) !important;
+      box-shadow: 0 16px 30px -4px rgba(0, 0, 0, 0.2);
+    }
+
+    .pinned-bill.drop-active {
+      outline: 2px dashed var(--accent);
+      background: #f0fdf4;
+    }
+
+    /* Pushpins */
+    .note-pin {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #f87171, #dc2626 70%, #991b1b);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+      z-index: 10;
+    }
+
+    .note-pin.gold {
+      background: radial-gradient(circle at 35% 35%, #fbbf24, #d97706 70%, #92400e);
+    }
+
+    /* Bill Photo Container */
+    .bill-photo-wrap {
+      margin: 10px 0 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      background: #000;
+      max-height: 220px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .bill-photo-wrap img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.2s ease;
+    }
+
+    .bill-photo-wrap:hover img {
+      transform: scale(1.03);
+    }
+
+    .bill-photo-badge {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 4px;
+      backdrop-filter: blur(4px);
+    }
+
+    .bill-change-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(255, 255, 255, 0.85);
+      color: #0f172a;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Realistic Thermal Receipt Slip (Generated if no photo attached) */
+    .thermal-receipt-slip {
+      background: #fffdf9;
+      border: 1px solid #e7e5e4;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.02);
+      padding: 12px 10px;
+      margin: 10px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #292524;
+      line-height: 1.4;
+      position: relative;
+    }
+
+    .thermal-receipt-slip::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: radial-gradient(circle, transparent, transparent 50%, #fffdf9 50%, #fffdf9 100%);
+      background-size: 8px 8px;
+    }
+
+    .thermal-receipt-slip::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: radial-gradient(circle, transparent, transparent 50%, #fffdf9 50%, #fffdf9 100%);
+      background-size: 8px 8px;
+      transform: rotate(180deg);
+    }
+
+    .thermal-header {
+      text-align: center;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 1px;
+      border-bottom: 1px dashed #d6d3d1;
+      padding-bottom: 6px;
+      margin-bottom: 6px;
+    }
+
+    .thermal-line {
+      display: flex;
+      justify-content: space-between;
+      margin: 2px 0;
+      font-size: 10.5px;
+    }
+
+    .thermal-divider {
+      border-bottom: 1px dashed #d6d3d1;
+      margin: 5px 0;
+    }
+
+    .thermal-barcode {
+      height: 24px;
+      background: repeating-linear-gradient(90deg, #1c1917, #1c1917 2px, transparent 2px, transparent 4px, #1c1917 4px, #1c1917 7px, transparent 7px, transparent 9px);
+      margin-top: 8px;
+      opacity: 0.8;
+    }
+
+    .thermal-upload-zone {
+      margin-top: 8px;
+      padding: 6px;
+      background: #f1f5f9;
+      border: 1px dashed #94a3b8;
+      border-radius: 4px;
+      text-align: center;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      display: block;
+    }
+
+    .thermal-upload-zone:hover {
+      background: var(--accent-light);
+      border-color: var(--accent);
+    }
+
+    /* Discrepancy Caution Tape */
+    .caution-tape {
+      position: absolute;
+      top: 14px;
+      right: -10px;
+      background: #fef08a;
+      color: #854d0e;
+      border: 1px dashed #ca8a04;
+      padding: 3px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transform: rotate(4deg);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      z-index: 5;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bill-vendor {
+      font-weight: 800;
+      font-size: 15px;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    .bill-row-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-top: 4px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .bill-total-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 18px;
+      color: #0f172a;
+      margin-top: 4px;
+    }
+
+    .bill-tax-line {
+      font-size: 11px;
+      color: #64748b;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bill-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed #e2e8f0;
+    }
+
+    /* Lightbox Modal */
+    .lightbox-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .lightbox-modal.open {
+      display: flex;
+    }
+
+    .lightbox-card {
+      max-width: 90vw;
+      max-height: 90vh;
+      position: relative;
+      background: #000;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .lightbox-card img {
+      max-width: 100%;
+      max-height: 85vh;
+      display: block;
+      object-fit: contain;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.25);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .lightbox-close:hover {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Badges */
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-pill.warn {
+      background: var(--warn-bg);
+      color: var(--warn-ink);
+      border: 1px solid var(--warn-border);
+    }
+
+    .badge-pill.danger {
+      background: var(--danger-bg);
+      color: var(--danger-ink);
+      border: 1px solid var(--danger-border);
+    }
+
+    .badge-pill.success {
+      background: var(--success-bg);
+      color: var(--success-ink);
+      border: 1px solid var(--success-border);
+    }
+
+    .audit-alert {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--danger-bg);
+      color: var(--danger-ink);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: help;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 13px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 100;
+    }
+
+    .toast.on {
+      opacity: 1;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- Sign in / Sign up -->
-<main id="authView" class="auth-box" hidden>
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-    <div class="brand-icon">RV</div>
-    <span class="volopay-pill">Stage 1: 100% Free</span>
-  </div>
-  <h1>Receipt Vault</h1>
-  <p>Permanent expense ledger filled automatically by Claude over MCP with compliance & anomaly detection.</p>
-  <form id="authForm">
-    <label>Email Address
-      <input id="email" type="email" autocomplete="email" placeholder="name@company.com" required>
-    </label>
-    <label>Password
-      <input id="password" type="password" autocomplete="current-password" minlength="8" required>
-    </label>
-    <p class="auth-err" id="authErr" role="alert"></p>
-    <button class="btn primary" id="authBtn" type="submit" style="padding:11px;">Sign in</button>
-    <button class="btn link" id="authToggle" type="button" style="text-align:center;">New here? Create an account</button>
-  </form>
-</main>
-
-<!-- Main Application -->
-<div id="appView" hidden>
-  <header class="top"><div class="wrap">
-    <div class="brand-group">
-      <div class="brand-icon">RV</div>
-      <span class="brand-name">Receipt Vault</span>
-      <span class="volopay-pill">⚡ Volopay Ready</span>
-    </div>
-
-    <!-- Dual View Switcher -->
-    <div class="view-switcher">
-      <button id="viewTableBtn" class="active" onclick="switchView('table')">▦ Table View</button>
-      <button id="viewBoardBtn" onclick="switchView('board')">📌 Notice Board View</button>
-    </div>
-
-    <div class="user-badge">
-      <span>●</span>
-      <span id="who"></span>
-    </div>
-    <button class="btn" id="logout">Sign out</button>
-  </div></header>
-
-  <!-- Connect Claude Drawer -->
-  <section class="connect-drawer"><div class="wrap">
-    <details id="connectBox">
-      <summary>⚡ Claude MCP Connection & Intelligence Prompts</summary>
-      <div class="connect-content">
-        <p style="font-size:13px;color:var(--text-muted);">
-          Attach a receipt or bill photo in Claude. It reads the image, checks math discrepancies, and pins it onto your floating board.
-        </p>
-        <div class="connect-url-row">
-          <input id="mcpUrl" readonly aria-label="Private Claude MCP connector link">
-          <button class="btn primary" id="copyUrl">Copy Connector Link</button>
-          <button class="btn" id="rotate">Rotate Link</button>
-        </div>
-        <div>
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">
-            Try asking Claude:
-          </div>
-          <div class="prompt-chips">
-            <span class="prompt-chip" onclick="copyPrompt(this)">📸 "Add this receipt photo and pin it to my Notice Board"</span>
-            <span class="prompt-chip" onclick="copyPrompt(this)">📊 "Run spending_insights for this month and list top merchants"</span>
-            <span class="prompt-chip" onclick="copyPrompt(this)">⚖️ "Check compliance for a $95 team lunch at Joe's Diner"</span>
-          </div>
-        </div>
-      </div>
-    </details>
-  </div></section>
-
-  <main class="wrap">
-    <!-- KPI Stat Cards -->
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <span class="kpi-title">Total Spend</span>
-        <div class="kpi-val" id="kpiSpend">$0.00</div>
-        <div class="kpi-sub" id="kpiCount">0 receipts recorded</div>
-      </div>
-      <div class="kpi-card highlight" id="kpiReviewCard">
-        <span class="kpi-title">Pending Review</span>
-        <div class="kpi-val" id="kpiReview">0</div>
-        <div class="kpi-sub">Added by Claude • Needs confirmation</div>
-      </div>
-      <div class="kpi-card alert" id="kpiFlagCard">
-        <span class="kpi-title">Policy & Math Alerts</span>
-        <div class="kpi-val" id="kpiFlags">0</div>
-        <div class="kpi-sub">Discrepancies / Policy warnings</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-title">Tax Tracked (Deductible)</span>
-        <div class="kpi-val" id="kpiTax">$0.00</div>
-        <div class="kpi-sub">Itemized VAT/GST for accountant</div>
-      </div>
-    </div>
-
-    <!-- Category Breakdown Bar Chart -->
-    <div class="cat-breakdown" id="catBox" hidden>
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Spend by Category</div>
-      <div class="cat-bars" id="catBars"></div>
-    </div>
-
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <label style="display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px;color:var(--text-muted);">
-        Month <input id="month" type="month">
+  <!-- Sign in / Sign up -->
+  <main id="authView" class="auth-box" hidden>
+    <h1>Receipt Vault</h1>
+    <p>Permanent expense ledger filled automatically by Claude over MCP with compliance & anomaly detection.</p>
+    <form id="authForm">
+      <label>Email Address
+        <input id="email" type="email" autocomplete="email" placeholder="name@company.com" required>
       </label>
-      <button class="btn" id="allTime">All time</button>
-      <input id="search" type="search" placeholder="Search vendor, notes, policies..." style="width:220px;" aria-label="Search">
-      <select id="catFilter" aria-label="Category filter"><option value="">All categories</option></select>
-
-      <label class="chip-toggle">
-        <input type="checkbox" id="onlyReview">
-        <span>⚡ Needs review</span>
+      <label>Password
+        <input id="password" type="password" autocomplete="current-password" minlength="8" required>
       </label>
-      <label class="chip-toggle">
-        <input type="checkbox" id="onlyFlagged">
-        <span>⚠️ Flagged / Mismatches</span>
-      </label>
-
-      <span class="grow"></span>
-
-      <button class="btn" id="addManual">+ Add Row</button>
-
-      <!-- Multi-format Export Dropdown -->
-      <div class="export-menu">
-        <button class="btn primary" id="exportBtn">Export CSV ▾</button>
-        <div class="export-dropdown" id="exportDropdown">
-          <div class="export-item" onclick="triggerExport('volopay')">
-            <span class="export-item-title">🟢 Volopay Format (Recommended)</span>
-            <span class="export-item-sub">Ready for corporate reconciliation & upload</span>
-          </div>
-          <div class="export-item" onclick="triggerExport('quickbooks')">
-            <span class="export-item-title">📘 QuickBooks Format</span>
-            <span class="export-item-sub">Matches QBO journal import</span>
-          </div>
-          <div class="export-item" onclick="triggerExport('xero')">
-            <span class="export-item-title">🟣 Xero Format</span>
-            <span class="export-item-sub">Formatted for Xero bills import</span>
-          </div>
-          <div class="export-item" onclick="triggerExport('standard')">
-            <span class="export-item-title">📄 Standard Ledger CSV</span>
-            <span class="export-item-sub">Complete raw export with all fields</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 1. Table View -->
-    <div class="table-card" id="tableView">
-      <div class="table-wrap" id="list"></div>
-    </div>
-
-    <!-- 2. 📌 Notice Board View (Stacked by Month with Bill Images) -->
-    <div id="boardView" hidden>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div>
-          <h2 style="font-size:18px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px;">
-            📌 Bill & Receipt Notice Board
-          </h2>
-          <p style="font-size:12px;color:var(--text-muted);">
-            Receipt bills compiled by Claude, pinned and stacked by month. Click any photo to zoom in.
-          </p>
-        </div>
-        <span class="volopay-pill">Interactive Pinboard</span>
-      </div>
-      <div class="board-months" id="boardMonthsContainer"></div>
-    </div>
+      <p class="auth-err" id="authErr" role="alert"></p>
+      <button class="btn primary" id="authBtn" type="submit" style="padding:11px;">Sign in</button>
+      <button class="btn link" id="authToggle" type="button" style="text-align:center;">New here? Create an
+        account</button>
+    </form>
   </main>
-</div>
 
-<!-- Image Lightbox Modal -->
-<div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
-  <div class="lightbox-card" onclick="event.stopPropagation()">
-    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-    <img id="lightboxImg" src="" alt="Full size receipt bill">
+  <!-- Main Application -->
+  <div id="appView" hidden>
+    <header class="top">
+      <div class="wrap">
+        <div class="brand-group">
+          <span class="brand-name">Receipt Vault</span>
+        </div>
+
+        <!-- Dual View Switcher -->
+        <div class="view-switcher">
+          <button id="viewTableBtn" class="active" onclick="switchView('table')">▦ Table View</button>
+          <button id="viewBoardBtn" onclick="switchView('board')">📌 Board View</button>
+        </div>
+
+        <div class="user-badge">
+          <span>●</span>
+          <span id="who"></span>
+        </div>
+        <button class="btn" id="logout">Sign out</button>
+      </div>
+    </header>
+
+    <!-- Connect Claude Drawer -->
+    <section class="connect-drawer">
+      <div class="wrap">
+        <details id="connectBox">
+          <summary>⚡ Claude MCP Connection & Intelligence Prompts</summary>
+          <div class="connect-content">
+            <p style="font-size:13px;color:var(--text-muted);">
+              Attach a receipt or bill photo in Claude. It reads the image, checks math discrepancies, and pins it onto
+              your floating board.
+            </p>
+            <div class="connect-url-row">
+              <input id="mcpUrl" readonly aria-label="Private Claude MCP connector link">
+              <button class="btn primary" id="copyUrl">Copy Connector Link</button>
+              <button class="btn" id="rotate">Rotate Link</button>
+            </div>
+            <div>
+              <div
+                style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">
+                Try asking Claude:
+              </div>
+              <div class="prompt-chips">
+                <span class="prompt-chip" onclick="copyPrompt(this)">📸 "Add this receipt photo and pin it to my Notice
+                  Board"</span>
+                <span class="prompt-chip" onclick="copyPrompt(this)">📊 "Run spending_insights for this month and list
+                  top merchants"</span>
+                <span class="prompt-chip" onclick="copyPrompt(this)">⚖️ "Check compliance for a $95 team lunch at Joe's
+                  Diner"</span>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <main class="wrap">
+      <!-- KPI Stat Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-title">Total Spend</span>
+          <div class="kpi-val" id="kpiSpend">$0.00</div>
+          <div class="kpi-sub" id="kpiCount">0 receipts recorded</div>
+        </div>
+        <div class="kpi-card highlight" id="kpiReviewCard">
+          <span class="kpi-title">Pending Review</span>
+          <div class="kpi-val" id="kpiReview">0</div>
+          <div class="kpi-sub">Added by Claude • Needs confirmation</div>
+        </div>
+        <div class="kpi-card alert" id="kpiFlagCard">
+          <span class="kpi-title">Policy & Math Alerts</span>
+          <div class="kpi-val" id="kpiFlags">0</div>
+          <div class="kpi-sub">Discrepancies / Policy warnings</div>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Tax Tracked (Deductible)</span>
+          <div class="kpi-val" id="kpiTax">$0.00</div>
+          <div class="kpi-sub">Itemized VAT/GST for accountant</div>
+        </div>
+      </div>
+
+      <!-- Category Breakdown Bar Chart -->
+      <div class="cat-breakdown" id="catBox" hidden>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Spend by Category
+        </div>
+        <div class="cat-bars" id="catBars"></div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <!-- 📅 Interactive Calendar & Range Picker -->
+        <div class="cal-picker-wrap">
+          <button class="cal-btn" id="calPickerBtn" type="button" onclick="toggleCalPopover(event)">
+            <span>📅</span>
+            <span id="calActiveLabel">All time</span>
+            <span style="font-size:10px;color:var(--text-muted);">▾</span>
+          </button>
+          <div class="cal-popover" id="calPopover">
+            <div class="cal-presets">
+              <button type="button" class="cal-preset-pill" onclick="selectCalPreset('all')">All time</button>
+              <button type="button" class="cal-preset-pill" onclick="selectCalPreset('this')">This Month</button>
+              <button type="button" class="cal-preset-pill" onclick="selectCalPreset('last')">Last Month</button>
+              <button type="button" class="cal-preset-pill" onclick="selectCalPreset('ytd')">YTD</button>
+            </div>
+
+            <div class="cal-month-stepper">
+              <button type="button" class="cal-step-btn" onclick="stepCalYear(-1)">◀</button>
+              <span id="calYearDisplay" style="font-weight:800;font-size:14px;">2024</span>
+              <button type="button" class="cal-step-btn" onclick="stepCalYear(1)">▶</button>
+            </div>
+
+            <div class="cal-months-grid" id="calMonthsGrid"></div>
+
+            <div class="cal-range-row">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Custom Date
+                Range</div>
+              <div class="cal-range-inputs">
+                <input type="date" id="rangeStart" aria-label="Start date">
+                <span style="color:var(--text-muted);font-size:12px;">to</span>
+                <input type="date" id="rangeEnd" aria-label="End date">
+              </div>
+              <button type="button" class="btn primary" style="width:100%;padding:6px;font-size:12px;"
+                onclick="applyDateRange()">Apply Date Range</button>
+            </div>
+          </div>
+        </div>
+
+        <input id="search" type="search" placeholder="Search vendor, notes, policies..." style="width:230px;"
+          aria-label="Search">
+        <select id="catFilter" aria-label="Category filter">
+          <option value="">All categories</option>
+        </select>
+
+        <label class="chip-toggle">
+          <input type="checkbox" id="onlyReview">
+          <span>⚡ Needs review</span>
+        </label>
+        <label class="chip-toggle">
+          <input type="checkbox" id="onlyFlagged">
+          <span>⚠️ Flagged / Mismatches</span>
+        </label>
+
+        <span class="grow"></span>
+
+        <button class="btn" id="addManual">+ Add Row</button>
+
+        <!-- Multi-format Export Dropdown -->
+        <div class="export-menu">
+          <button class="btn primary" id="exportBtn">Export CSV ▾</button>
+          <div class="export-dropdown" id="exportDropdown">
+            <div class="export-item" onclick="triggerExport('volopay')">
+              <span class="export-item-title">🟢 Volopay Format (Recommended)</span>
+              <span class="export-item-sub">Ready for corporate reconciliation & upload</span>
+            </div>
+            <div class="export-item" onclick="triggerExport('quickbooks')">
+              <span class="export-item-title">📘 QuickBooks Format</span>
+              <span class="export-item-sub">Matches QBO journal import</span>
+            </div>
+            <div class="export-item" onclick="triggerExport('xero')">
+              <span class="export-item-title">🟣 Xero Format</span>
+              <span class="export-item-sub">Formatted for Xero bills import</span>
+            </div>
+            <div class="export-item" onclick="triggerExport('standard')">
+              <span class="export-item-title">📄 Standard Ledger CSV</span>
+              <span class="export-item-sub">Complete raw export with all fields</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. Table View -->
+      <div class="table-card" id="tableView">
+        <div class="table-wrap" id="list"></div>
+      </div>
+
+      <!-- 2. 📌 Notice Board View (Stacked by Month with Bill Images) -->
+      <div id="boardView" hidden>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <div>
+            <h2 style="font-size:18px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px;">
+              📌 Bill & Receipt Notice Board
+            </h2>
+            <p style="font-size:12px;color:var(--text-muted);">
+              Receipt bills compiled by Claude, pinned and stacked by month. Drag & drop receipt photos onto any bill,
+              or click to zoom in.
+            </p>
+          </div>
+        </div>
+        <div class="board-months" id="boardMonthsContainer"></div>
+      </div>
+    </main>
   </div>
-</div>
 
-<div class="toast" id="toast" role="status"></div>
+  <!-- Image Lightbox Modal -->
+  <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+    <div class="lightbox-card" onclick="event.stopPropagation()">
+      <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+      <img id="lightboxImg" src="" alt="Full size receipt bill">
+    </div>
+  </div>
 
-<script>
-const $ = s => document.querySelector(s);
-let cats = [], mode = 'login', timer, currentView = 'table';
-const thisMonth = new Date().toISOString().slice(0, 7);
-let lastLoadedRows = [];
+  <div class="toast" id="toast" role="status"></div>
 
-async function api(path, opts = {}) {
-  const r = await fetch(path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
-  if (r.status === 401 && path !== '/api/login' && path !== '/api/signup') { showAuth(); throw new Error('Sign in required.'); }
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || 'Request failed.');
-  return data;
-}
+  <script>
+    const $ = s => document.querySelector(s);
+    let cats = [], mode = 'login', timer, currentView = 'table';
+    let selectedMonth = ''; // '' means all time
+    let selectedStartDate = '', selectedEndDate = '';
+    let activeCalYear = 2024;
+    let lastLoadedRows = [];
 
-function toast(msg) {
-  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
-  clearTimeout(timer); timer = setTimeout(() => t.classList.remove('on'), 2200);
-}
+    async function api(path, opts = {}) {
+      const r = await fetch(path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+      if (r.status === 401 && path !== '/api/login' && path !== '/api/signup') { showAuth(); throw new Error('Sign in required.'); }
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'Request failed.');
+      return data;
+    }
 
-const money = (n, c = 'USD') => {
-  try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: c }).format(n); }
-  catch { return c + ' ' + Number(n).toFixed(2); }
-};
+    function toast(msg) {
+      const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+      clearTimeout(timer); timer = setTimeout(() => t.classList.remove('on'), 2200);
+    }
 
-function el(tag, props = {}, ...kids) {
-  const e = Object.assign(document.createElement(tag), props);
-  kids.flat().forEach(k => k && e.append(k));
-  return e;
-}
+    const money = (n, c = 'USD') => {
+      try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: c }).format(n); }
+      catch { return c + ' ' + Number(n).toFixed(2); }
+    };
 
-function copyPrompt(btn) {
-  navigator.clipboard.writeText(btn.textContent.replace(/^[^"]*"|"[^"]*$/g, ''));
-  toast('Prompt copied to clipboard! Paste it into Claude.');
-}
+    function el(tag, props = {}, ...kids) {
+      const e = Object.assign(document.createElement(tag), props);
+      kids.flat().forEach(k => k && e.append(k));
+      return e;
+    }
 
-/* ---- view switcher ---- */
-function switchView(v) {
-  currentView = v;
-  $('#viewTableBtn').classList.toggle('active', v === 'table');
-  $('#viewBoardBtn').classList.toggle('active', v === 'board');
-  $('#tableView').hidden = (v !== 'table');
-  $('#boardView').hidden = (v !== 'board');
-  if (v === 'board') renderBoard(lastLoadedRows);
-}
+    function copyPrompt(btn) {
+      navigator.clipboard.writeText(btn.textContent.replace(/^[^"]*"|"[^"]*$/g, ''));
+      toast('Prompt copied to clipboard! Paste it into Claude.');
+    }
 
-/* ---- lightbox ---- */
-function openLightbox(url) {
-  $('#lightboxImg').src = url;
-  $('#lightboxModal').classList.add('open');
-}
-function closeLightbox() {
-  $('#lightboxModal').classList.remove('open');
-}
+    /* ---- view switcher ---- */
+    function switchView(v) {
+      currentView = v;
+      $('#viewTableBtn').classList.toggle('active', v === 'table');
+      $('#viewBoardBtn').classList.toggle('active', v === 'board');
+      $('#tableView').hidden = (v !== 'table');
+      $('#boardView').hidden = (v !== 'board');
+      if (v === 'board') renderBoard(lastLoadedRows);
+    }
 
-/* ---- auth ---- */
-function showAuth() { $('#appView').hidden = true; $('#authView').hidden = false; }
-$('#authToggle').onclick = () => {
-  mode = mode === 'login' ? 'signup' : 'login';
-  $('#authBtn').textContent = mode === 'login' ? 'Sign in' : 'Create account';
-  $('#authToggle').textContent = mode === 'login' ? 'New here? Create an account' : 'Have an account? Sign in';
-  $('#password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
-  $('#authErr').textContent = '';
-};
-$('#authForm').onsubmit = async e => {
-  e.preventDefault(); $('#authErr').textContent = '';
-  try { await api('/api/' + mode, { method: 'POST', body: { email: $('#email').value, password: $('#password').value } }); await boot(); }
-  catch (err) { $('#authErr').textContent = err.message; }
-};
-$('#logout').onclick = async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); showAuth(); };
+    /* ---- lightbox ---- */
+    function openLightbox(url) {
+      $('#lightboxImg').src = url;
+      $('#lightboxModal').classList.add('open');
+    }
+    function closeLightbox() {
+      $('#lightboxModal').classList.remove('open');
+    }
 
-/* ---- connect ---- */
-$('#copyUrl').onclick = async () => {
-  $('#mcpUrl').select();
-  try { await navigator.clipboard.writeText($('#mcpUrl').value); toast('Connector link copied!'); }
-  catch { toast('Press Ctrl+C to copy'); }
-};
-$('#rotate').onclick = async () => {
-  if (!confirm('Make a new link? Claude will need the updated link to connect.')) return;
-  $('#mcpUrl').value = (await api('/api/rotate-token', { method: 'POST' })).mcpUrl;
-  toast('New connector link generated.');
-};
+    /* ---- auth ---- */
+    function showAuth() { $('#appView').hidden = true; $('#authView').hidden = false; }
+    $('#authToggle').onclick = () => {
+      mode = mode === 'login' ? 'signup' : 'login';
+      $('#authBtn').textContent = mode === 'login' ? 'Sign in' : 'Create account';
+      $('#authToggle').textContent = mode === 'login' ? 'New here? Create an account' : 'Have an account? Sign in';
+      $('#password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+      $('#authErr').textContent = '';
+    };
+    $('#authForm').onsubmit = async e => {
+      e.preventDefault(); $('#authErr').textContent = '';
+      try { await api('/api/' + mode, { method: 'POST', body: { email: $('#email').value, password: $('#password').value } }); await boot(); }
+      catch (err) { $('#authErr').textContent = err.message; }
+    };
+    $('#logout').onclick = async () => { await api('/api/logout', { method: 'POST' }).catch(() => { }); showAuth(); };
 
-/* ---- data ---- */
-function query() {
-  const p = new URLSearchParams();
-  if ($('#month').value) p.set('month', $('#month').value);
-  if ($('#search').value) p.set('search', $('#search').value);
-  if ($('#catFilter').value) p.set('category', $('#catFilter').value);
-  if ($('#onlyReview').checked) p.set('needs_review', 'true');
-  if ($('#onlyFlagged').checked) p.set('flagged', 'true');
-  return p;
-}
+    /* ---- connect ---- */
+    $('#copyUrl').onclick = async () => {
+      $('#mcpUrl').select();
+      try { await navigator.clipboard.writeText($('#mcpUrl').value); toast('Connector link copied!'); }
+      catch { toast('Press Ctrl+C to copy'); }
+    };
+    $('#rotate').onclick = async () => {
+      if (!confirm('Make a new link? Claude will need the updated link to connect.')) return;
+      $('#mcpUrl').value = (await api('/api/rotate-token', { method: 'POST' })).mcpUrl;
+      toast('New connector link generated.');
+    };
 
-async function refresh() {
-  const month = $('#month').value;
-  $('#allTime').classList.toggle('active', !month);
-  const [list, sum] = await Promise.all([
-    api('/api/expenses?' + query()),
-    api('/api/summary?month=' + month)
-  ]);
-  lastLoadedRows = list.rows;
-  renderSummary(sum, list.rows);
-  renderList(list.rows);
-  if (currentView === 'board') renderBoard(list.rows);
-}
+    /* ---- Calendar & Date Range Controls ---- */
+    const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function renderSummary(s, rows) {
-  const primaryCur = (s.totals[0] && s.totals[0].currency) || 'USD';
-  const totalAmount = s.totals.reduce((acc, t) => acc + t.total, 0);
-  $('#kpiSpend').textContent = money(totalAmount, primaryCur);
-  $('#kpiCount').textContent = `${s.totalCount || rows.length} receipts recorded`;
-  $('#kpiReview').textContent = s.needsReview || 0;
-  $('#kpiFlags').textContent = s.flaggedCount || 0;
-  $('#kpiTax').textContent = money(s.totalTax || 0, primaryCur);
-
-  // Category bars
-  const catBox = $('#catBox');
-  const catBars = $('#catBars');
-  catBars.replaceChildren();
-  if (s.totals.length && s.totals[0].byCategory.length) {
-    catBox.hidden = false;
-    const items = s.totals[0].byCategory;
-    const max = Math.max(...items.map(c => c.amount), 1);
-    items.forEach(c => {
-      catBars.append(el('div', { className: 'cat-bar-row' },
-        el('span', { style: 'font-weight:600;' }, c.category),
-        el('div', { className: 'bar-track' },
-          (() => { const f = el('div', { className: 'bar-fill' }); f.style.width = (c.amount / max * 100) + '%'; return f; })()
-        ),
-        el('span', { style: 'text-align:right;font-weight:600;' }, money(c.amount, primaryCur))
-      ));
+    function toggleCalPopover(e) {
+      e.stopPropagation();
+      $('#calPopover').classList.toggle('open');
+      renderCalMonths();
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.cal-picker-wrap')) $('#calPopover').classList.remove('open');
     });
-  } else {
-    catBox.hidden = true;
-  }
-}
 
-function field(e, key, type, extra = {}) {
-  const i = el('input', { type, value: e[key] ?? '', ...extra });
-  i.onchange = () => save(e.id, { [key]: type === 'number' ? i.value : i.value }, i);
-  return i;
-}
-
-async function save(id, patch, input) {
-  try {
-    await api('/api/expenses/' + id, { method: 'PATCH', body: patch });
-    toast('Saved');
-    await refresh();
-  } catch (err) {
-    toast(err.message);
-    if (input) input.style.borderColor = 'var(--danger-border)';
-  }
-}
-
-/* Image file uploader handler */
-async function uploadBillPhoto(expenseId, file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async () => {
-    try {
-      const dataUri = reader.result;
-      toast('Uploading bill photo...');
-      const uploadRes = await api('/api/upload', { method: 'POST', body: { data: dataUri } });
-      await save(expenseId, { image_url: uploadRes.url });
-      toast('Bill photo attached!');
-    } catch (err) {
-      toast('Upload failed: ' + err.message);
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-/* ---- Table Render ---- */
-function renderList(rows) {
-  const box = $('#list'); box.replaceChildren();
-  if (!rows.length) {
-    box.append(el('div', { style: 'padding:48px 24px;text-align:center;color:var(--text-muted);' },
-      el('div', { style: 'font-size:32px;margin-bottom:8px;' }, '🧾'),
-      el('div', { style: 'font-weight:700;font-size:16px;margin-bottom:4px;color:var(--text);' }, 'No expenses found'),
-      el('div', {}, 'Upload a receipt to Claude with your MCP link, or click "+ Add Row". If looking for older receipts, click "All time".')
-    ));
-    return;
-  }
-
-  const head = el('tr', {}, [
-    'Date', 'Merchant / Vendor', 'Category', 'Cur', 'Total', 'Tax', 'Bill Photo', 'Audit & Compliance', 'Notes / Discrepancy', 'Review Status', ''
-  ].map(h => el('th', {}, h)));
-
-  const body = rows.map(e => {
-    const sel = el('select', {}, cats.map(c => el('option', { value: c, selected: c === e.category }, c)));
-    sel.onchange = () => save(e.id, { category: sel.value });
-
-    // Bill Photo Thumb or Upload Button
-    let photoCell;
-    if (e.image_url) {
-      photoCell = el('div', { style: 'cursor:pointer;display:inline-block;', onclick: () => openLightbox(e.image_url) },
-        el('img', { src: e.image_url, style: 'width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--border);', title: 'Click to zoom bill' })
-      );
-    } else {
-      const fileInput = el('input', { type: 'file', accept: 'image/*', style: 'display:none;' });
-      fileInput.onchange = (ev) => uploadBillPhoto(e.id, ev.target.files[0]);
-      photoCell = el('label', { style: 'cursor:pointer;color:var(--accent);font-size:12px;font-weight:600;' },
-        '📷 Attach',
-        fileInput
-      );
+    function stepCalYear(delta) {
+      activeCalYear += delta;
+      $('#calYearDisplay').textContent = activeCalYear;
+      renderCalMonths();
     }
 
-    // Audit pill: Math Discrepancy or Policy Flag
-    let auditBadge;
-    if (e.discrepancy) {
-      auditBadge = el('span', { className: 'audit-alert', title: e.discrepancy }, '⚠️ Math Mismatch: ' + e.discrepancy);
-    } else if (e.policy_flag) {
-      auditBadge = el('span', { className: 'badge-pill warn', title: e.policy_flag }, '⚠️ ' + e.policy_flag);
-    } else {
-      auditBadge = el('span', { className: 'badge-pill success' }, '✅ Compliant');
+    function renderCalMonths() {
+      $('#calYearDisplay').textContent = activeCalYear;
+      const grid = $('#calMonthsGrid');
+      grid.replaceChildren();
+      MONTH_NAMES.forEach((name, idx) => {
+        const mm = String(idx + 1).padStart(2, '0');
+        const yyyymm = `${activeCalYear}-${mm}`;
+        const btn = el('button', {
+          type: 'button',
+          className: `cal-month-tile ${selectedMonth === yyyymm ? 'selected' : ''}`,
+          onclick: () => selectMonth(yyyymm, `${name} ${activeCalYear}`)
+        }, name);
+        grid.append(btn);
+      });
     }
 
-    const reviewAction = e.reviewed
-      ? el('span', { className: 'badge-pill success' }, e.source === 'claude' ? '🤖 Verified' : 'Manual')
-      : el('button', { className: 'btn primary', style: 'padding:4px 10px;font-size:12px;', onclick: () => save(e.id, { reviewed: true }) }, 'Confirm');
+    function selectMonth(yyyymm, label) {
+      selectedMonth = yyyymm;
+      selectedStartDate = '';
+      selectedEndDate = '';
+      $('#calActiveLabel').textContent = label;
+      $('#calPopover').classList.remove('open');
+      refresh();
+    }
 
-    const del = el('button', { className: 'btn danger', style: 'padding:4px 8px;font-size:12px;', onclick: async () => {
-      if (confirm('Delete ' + e.vendor + '?')) { await api('/api/expenses/' + e.id, { method: 'DELETE' }); toast('Deleted'); refresh(); }
-    } }, 'Delete');
+    function selectCalPreset(preset) {
+      const now = new Date();
+      if (preset === 'all') {
+        selectedMonth = '';
+        selectedStartDate = '';
+        selectedEndDate = '';
+        $('#calActiveLabel').textContent = 'All time';
+      } else if (preset === 'this') {
+        const ym = now.toISOString().slice(0, 7);
+        selectedMonth = ym;
+        selectedStartDate = '';
+        selectedEndDate = '';
+        $('#calActiveLabel').textContent = now.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      } else if (preset === 'last') {
+        const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const ym = d.toISOString().slice(0, 7);
+        selectedMonth = ym;
+        selectedStartDate = '';
+        selectedEndDate = '';
+        $('#calActiveLabel').textContent = d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      } else if (preset === 'ytd') {
+        selectedMonth = '';
+        selectedStartDate = `${now.getFullYear()}-01-01`;
+        selectedEndDate = now.toISOString().slice(0, 10);
+        $('#calActiveLabel').textContent = `YTD ${now.getFullYear()}`;
+      }
+      $('#calPopover').classList.remove('open');
+      refresh();
+    }
 
-    const isFlagged = !!(e.discrepancy || e.policy_flag);
-    const tr = el('tr', { className: `${e.reviewed ? '' : 'is-review'} ${isFlagged ? 'is-flagged' : ''}` },
-      el('td', { style: 'width:125px;' }, field(e, 'date', 'date')),
-      el('td', {}, field(e, 'vendor', 'text', { maxLength: 120 })),
-      el('td', { style: 'width:130px;' }, sel),
-      el('td', { style: 'width:65px;' }, field(e, 'currency', 'text', { maxLength: 3 })),
-      el('td', { className: 'num', style: 'width:105px;' }, field(e, 'amount', 'number', { step: '0.01', min: 0 })),
-      el('td', { className: 'num', style: 'width:85px;' }, field(e, 'tax', 'number', { step: '0.01', min: 0 })),
-      el('td', { style: 'width:80px;text-align:center;' }, photoCell),
-      el('td', { style: 'width:180px;' }, auditBadge),
-      el('td', {}, field(e, 'notes', 'text', { placeholder: e.discrepancy || 'Notes...', maxLength: 500 })),
-      el('td', { style: 'width:100px;text-align:center;' }, reviewAction),
-      el('td', { style: 'width:70px;text-align:right;' }, del)
-    );
-    return tr;
-  });
+    function applyDateRange() {
+      const start = $('#rangeStart').value;
+      const end = $('#rangeEnd').value;
+      if (!start && !end) return;
+      selectedMonth = '';
+      selectedStartDate = start;
+      selectedEndDate = end;
+      $('#calActiveLabel').textContent = `${start || '...'} to ${end || '...'}`;
+      $('#calPopover').classList.remove('open');
+      refresh();
+    }
 
-  box.append(el('table', {}, el('thead', {}, head), el('tbody', {}, body)));
-}
+    /* ---- data query & refresh ---- */
+    function query() {
+      const p = new URLSearchParams();
+      if (selectedMonth) p.set('month', selectedMonth);
+      if (selectedStartDate) p.set('start_date', selectedStartDate);
+      if (selectedEndDate) p.set('end_date', selectedEndDate);
+      if ($('#search').value) p.set('search', $('#search').value);
+      if ($('#catFilter').value) p.set('category', $('#catFilter').value);
+      if ($('#onlyReview').checked) p.set('needs_review', 'true');
+      if ($('#onlyFlagged').checked) p.set('flagged', 'true');
+      return p;
+    }
 
-/* ---- 📌 NOTICE BOARD RENDER (Stacked by Month with Bill Images) ---- */
-function renderBoard(rows) {
-  const container = $('#boardMonthsContainer');
-  container.replaceChildren();
+    async function refresh() {
+      const q = query();
+      const [list, sum] = await Promise.all([
+        api('/api/expenses?' + q),
+        api('/api/summary?' + q)
+      ]);
+      lastLoadedRows = list.rows;
+      renderSummary(sum, list.rows);
+      renderList(list.rows);
+      if (currentView === 'board') renderBoard(list.rows);
+    }
 
-  if (!rows.length) {
-    container.append(el('div', { style: 'padding:40px;color:var(--text-muted);text-align:center;width:100%;' },
-      'The board is empty. Attach a receipt photo in Claude or add an expense to pin bills here!'
-    ));
-    return;
-  }
+    function renderSummary(s, rows) {
+      const primaryCur = (s.totals[0] && s.totals[0].currency) || 'USD';
+      const totalAmount = s.totals.reduce((acc, t) => acc + t.total, 0);
+      $('#kpiSpend').textContent = money(totalAmount, primaryCur);
+      $('#kpiCount').textContent = `${s.totalCount || rows.length} receipts recorded`;
+      $('#kpiReview').textContent = s.needsReview || 0;
+      $('#kpiFlags').textContent = s.flaggedCount || 0;
+      $('#kpiTax').textContent = money(s.totalTax || 0, primaryCur);
 
-  // Group by Month (YYYY-MM)
-  const byMonth = {};
-  rows.forEach(e => {
-    const m = e.date.slice(0, 7) || 'Other';
-    (byMonth[m] = byMonth[m] || []).push(e);
-  });
+      // Category bars
+      const catBox = $('#catBox');
+      const catBars = $('#catBars');
+      catBars.replaceChildren();
+      if (s.totals.length && s.totals[0].byCategory.length) {
+        catBox.hidden = false;
+        const items = s.totals[0].byCategory;
+        const max = Math.max(...items.map(c => c.amount), 1);
+        items.forEach(c => {
+          catBars.append(el('div', { className: 'cat-bar-row' },
+            el('span', { style: 'font-weight:600;' }, c.category),
+            el('div', { className: 'bar-track' },
+              (() => { const f = el('div', { className: 'bar-fill' }); f.style.width = (c.amount / max * 100) + '%'; return f; })()
+            ),
+            el('span', { style: 'text-align:right;font-weight:600;' }, money(c.amount, primaryCur))
+          ));
+        });
+      } else {
+        catBox.hidden = true;
+      }
+    }
 
-  // Sort months descending (newest first)
-  const sortedMonths = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
+    function field(e, key, type, extra = {}) {
+      const i = el('input', { type, value: e[key] ?? '', ...extra });
+      i.onchange = () => save(e.id, { [key]: type === 'number' ? i.value : i.value }, i);
+      return i;
+    }
 
-  sortedMonths.forEach((monthKey, colIdx) => {
-    const monthExpenses = byMonth[monthKey];
-    const monthTotal = monthExpenses.reduce((s, e) => s + e.amount, 0);
-    const monthCur = (monthExpenses[0] && monthExpenses[0].currency) || 'USD';
+    async function save(id, patch, input) {
+      try {
+        await api('/api/expenses/' + id, { method: 'PATCH', body: patch });
+        toast('Saved');
+        await refresh();
+      } catch (err) {
+        toast(err.message);
+        if (input) input.style.borderColor = 'var(--danger-border)';
+      }
+    }
 
-    // Format display title e.g. "April 2024"
-    let monthTitle = monthKey;
-    try {
-      const d = new Date(monthKey + '-01T00:00:00Z');
-      monthTitle = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric', timeZone: 'UTC' });
-    } catch {}
+    /* Image upload handler */
+    async function uploadBillPhoto(expenseId, file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const dataUri = reader.result;
+          toast('Attaching bill photo...');
+          const uploadRes = await api('/api/upload', { method: 'POST', body: { data: dataUri } });
+          await save(expenseId, { image_url: uploadRes.url });
+          toast('Bill photo attached successfully!');
+        } catch (err) {
+          toast('Upload failed: ' + err.message);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
 
-    const col = el('div', { className: 'board-month-column' });
+    /* ---- Table Render ---- */
+    function renderList(rows) {
+      const box = $('#list'); box.replaceChildren();
+      if (!rows.length) {
+        box.append(el('div', { style: 'padding:48px 24px;text-align:center;color:var(--text-muted);' },
+          el('div', { style: 'font-size:32px;margin-bottom:8px;' }, '🧾'),
+          el('div', { style: 'font-weight:700;font-size:16px;margin-bottom:4px;color:var(--text);' }, 'No expenses found'),
+          el('div', {}, 'Upload a receipt to Claude with your MCP link, or click "+ Add Row". If looking for older receipts, choose "All time" in the calendar picker.')
+        ));
+        return;
+      }
 
-    // Month column header
-    col.append(el('div', { className: 'month-col-head' },
-      el('span', { className: 'month-col-title' }, `📅 ${monthTitle}`),
-      el('span', { className: 'month-col-total' }, money(monthTotal, monthCur))
-    ));
+      const head = el('tr', {}, [
+        'Date', 'Merchant / Vendor', 'Category', 'Cur', 'Total', 'Tax', 'Bill Photo', 'Audit & Compliance', 'Notes / Discrepancy', 'Review Status', ''
+      ].map(h => el('th', {}, h)));
 
-    const stack = el('div', { className: 'board-cards-stack' });
+      const body = rows.map(e => {
+        const sel = el('select', {}, cats.map(c => el('option', { value: c, selected: c === e.category }, c)));
+        sel.onchange = () => save(e.id, { category: sel.value });
 
-    monthExpenses.forEach((e, idx) => {
-      // Natural slight rotation between -2deg and +2deg
-      const rotations = [-1.5, 1.2, -0.8, 1.8, -1.2, 0.9];
-      const rot = rotations[(colIdx * 3 + idx) % rotations.length];
+        // Bill Photo Thumb or Upload Button
+        let photoCell;
+        if (e.image_url) {
+          photoCell = el('div', { style: 'cursor:pointer;display:inline-block;', onclick: () => openLightbox(e.image_url) },
+            el('img', { src: e.image_url, style: 'width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--border);', title: 'Click to zoom bill' })
+          );
+        } else {
+          const fileInput = el('input', { type: 'file', accept: 'image/*', style: 'display:none;' });
+          fileInput.onchange = (ev) => uploadBillPhoto(e.id, ev.target.files[0]);
+          photoCell = el('label', { style: 'cursor:pointer;color:var(--accent);font-size:12px;font-weight:600;' },
+            '📷 Attach',
+            fileInput
+          );
+        }
 
-      const card = el('div', {
-        className: 'pinned-bill',
-        style: `transform: rotate(${rot}deg);`,
-        draggable: 'true'
+        // Audit pill: Math Discrepancy or Policy Flag
+        let auditBadge;
+        if (e.discrepancy) {
+          auditBadge = el('span', { className: 'audit-alert', title: e.discrepancy }, '⚠️ Math Mismatch: ' + e.discrepancy);
+        } else if (e.policy_flag) {
+          auditBadge = el('span', { className: 'badge-pill warn', title: e.policy_flag }, '⚠️ ' + e.policy_flag);
+        } else {
+          auditBadge = el('span', { className: 'badge-pill success' }, '✅ Compliant');
+        }
+
+        const reviewAction = e.reviewed
+          ? el('span', { className: 'badge-pill success' }, e.source === 'claude' ? '🤖 Verified' : 'Manual')
+          : el('button', { className: 'btn primary', style: 'padding:4px 10px;font-size:12px;', onclick: () => save(e.id, { reviewed: true }) }, 'Confirm');
+
+        const del = el('button', {
+          className: 'btn danger', style: 'padding:4px 8px;font-size:12px;', onclick: async () => {
+            if (confirm('Delete ' + e.vendor + '?')) { await api('/api/expenses/' + e.id, { method: 'DELETE' }); toast('Deleted'); refresh(); }
+          }
+        }, 'Delete');
+
+        const isFlagged = !!(e.discrepancy || e.policy_flag);
+        const tr = el('tr', { className: `${e.reviewed ? '' : 'is-review'} ${isFlagged ? 'is-flagged' : ''}` },
+          el('td', { style: 'width:125px;' }, field(e, 'date', 'date')),
+          el('td', {}, field(e, 'vendor', 'text', { maxLength: 120 })),
+          el('td', { style: 'width:130px;' }, sel),
+          el('td', { style: 'width:65px;' }, field(e, 'currency', 'text', { maxLength: 3 })),
+          el('td', { className: 'num', style: 'width:105px;' }, field(e, 'amount', 'number', { step: '0.01', min: 0 })),
+          el('td', { className: 'num', style: 'width:85px;' }, field(e, 'tax', 'number', { step: '0.01', min: 0 })),
+          el('td', { style: 'width:80px;text-align:center;' }, photoCell),
+          el('td', { style: 'width:180px;' }, auditBadge),
+          el('td', {}, field(e, 'notes', 'text', { placeholder: e.discrepancy || 'Notes...', maxLength: 500 })),
+          el('td', { style: 'width:100px;text-align:center;' }, reviewAction),
+          el('td', { style: 'width:70px;text-align:right;' }, del)
+        );
+        return tr;
       });
 
-      // Drag and drop support
-      card.ondragstart = (ev) => {
-        ev.dataTransfer.setData('text/plain', String(e.id));
-        card.style.opacity = '0.4';
-      };
-      card.ondragend = () => { card.style.opacity = '1'; };
+      box.append(el('table', {}, el('thead', {}, head), el('tbody', {}, body)));
+    }
 
-      // Pushpin (gold if verified, red if needs review)
-      const pin = el('span', { className: `note-pin ${e.reviewed ? 'gold' : ''}` });
-      card.append(pin);
+    /* ---- 📌 NOTICE BOARD RENDER (Stacked by Month with Bill Images) ---- */
+    function renderBoard(rows) {
+      const container = $('#boardMonthsContainer');
+      container.replaceChildren();
 
-      // Caution tape if discrepancy or policy flag
-      if (e.discrepancy) {
-        card.append(el('span', { className: 'caution-tape', title: e.discrepancy }, '⚠️ ' + e.discrepancy));
-      } else if (e.policy_flag) {
-        card.append(el('span', { className: 'caution-tape', title: e.policy_flag }, '⚠️ ' + e.policy_flag));
+      if (!rows.length) {
+        container.append(el('div', { style: 'padding:40px;color:var(--text-muted);text-align:center;width:100%;' },
+          'The board is empty. Choose "All time" in the calendar picker or upload a receipt to Claude to pin bills here!'
+        ));
+        return;
       }
 
-      // Vendor & Category
-      card.append(
-        el('div', { className: 'bill-vendor' }, e.vendor),
-        el('div', { className: 'bill-row-meta' },
-          el('span', {}, e.date),
-          el('span', { className: 'volopay-pill', style: 'font-size:9px;' }, e.category)
-        )
-      );
+      // Group by Month (YYYY-MM)
+      const byMonth = {};
+      rows.forEach(e => {
+        const m = e.date.slice(0, 7) || 'Other';
+        (byMonth[m] = byMonth[m] || []).push(e);
+      });
 
-      // 📸 BILL PHOTO THUMBNAIL
-      if (e.image_url) {
-        const photoWrap = el('div', { className: 'bill-photo-wrap', onclick: () => openLightbox(e.image_url) },
-          el('img', { src: e.image_url, alt: `Bill photo for ${e.vendor}` }),
-          el('span', { className: 'bill-photo-badge' }, '🔍 Zoom Bill')
-        );
-        card.append(photoWrap);
-      } else {
-        // Fallback: stylish thermal receipt box with direct attach button
-        const fileInput = el('input', { type: 'file', accept: 'image/*', style: 'display:none;' });
-        fileInput.onchange = (ev) => uploadBillPhoto(e.id, ev.target.files[0]);
+      // Sort months descending (newest first)
+      const sortedMonths = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
 
-        const mock = el('div', { className: 'bill-thermal-mock' },
-          el('div', { style: 'letter-spacing:1px;font-size:10px;text-transform:uppercase;' }, `--- ${e.vendor} ---`),
-          el('div', { style: 'font-size:10px;margin-top:2px;' }, `${e.date} • ${e.category}`),
-          el('label', {}, '📷 Attach Bill Photo', fileInput)
-        );
-        card.append(mock);
+      sortedMonths.forEach((monthKey, colIdx) => {
+        const monthExpenses = byMonth[monthKey];
+        const monthTotal = monthExpenses.reduce((s, e) => s + e.amount, 0);
+        const monthCur = (monthExpenses[0] && monthExpenses[0].currency) || 'USD';
+
+        let monthTitle = monthKey;
+        try {
+          const d = new Date(monthKey + '-01T00:00:00Z');
+          monthTitle = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+        } catch { }
+
+        const col = el('div', { className: 'board-month-column' });
+
+        // Month column header
+        col.append(el('div', { className: 'month-col-head' },
+          el('span', { className: 'month-col-title' }, `📅 ${monthTitle}`),
+          el('span', { className: 'month-col-total' }, money(monthTotal, monthCur))
+        ));
+
+        const stack = el('div', { className: 'board-cards-stack' });
+
+        monthExpenses.forEach((e, idx) => {
+          const rotations = [-1.5, 1.2, -0.8, 1.8, -1.2, 0.9];
+          const rot = rotations[(colIdx * 3 + idx) % rotations.length];
+
+          const card = el('div', {
+            className: 'pinned-bill',
+            style: `transform: rotate(${rot}deg);`,
+            draggable: 'true'
+          });
+
+          // Drag and drop attachment support
+          card.ondragover = (ev) => { ev.preventDefault(); card.classList.add('drop-active'); };
+          card.ondragleave = () => { card.classList.remove('drop-active'); };
+          card.ondrop = (ev) => {
+            ev.preventDefault();
+            card.classList.remove('drop-active');
+            if (ev.dataTransfer.files && ev.dataTransfer.files[0]) {
+              uploadBillPhoto(e.id, ev.dataTransfer.files[0]);
+            }
+          };
+
+          // Pushpin (gold if verified, red if needs review)
+          const pin = el('span', { className: `note-pin ${e.reviewed ? 'gold' : ''}` });
+          card.append(pin);
+
+          // Caution tape if discrepancy or policy flag
+          if (e.discrepancy) {
+            card.append(el('span', { className: 'caution-tape', title: e.discrepancy }, '⚠️ ' + e.discrepancy));
+          } else if (e.policy_flag) {
+            card.append(el('span', { className: 'caution-tape', title: e.policy_flag }, '⚠️ ' + e.policy_flag));
+          }
+
+          // Vendor & Category
+          card.append(
+            el('div', { className: 'bill-vendor' }, e.vendor),
+            el('div', { className: 'bill-row-meta' },
+              el('span', {}, e.date),
+              el('span', { style: 'font-weight:700;font-size:11px;color:var(--accent);' }, e.category)
+            )
+          );
+
+          // 📸 BILL PHOTO DISPLAY
+          if (e.image_url) {
+            const fileChangeInput = el('input', { type: 'file', accept: 'image/*', style: 'display:none;' });
+            fileChangeInput.onchange = (ev) => uploadBillPhoto(e.id, ev.target.files[0]);
+
+            const photoWrap = el('div', { className: 'bill-photo-wrap', onclick: () => openLightbox(e.image_url) },
+              el('img', { src: e.image_url, alt: `Bill photo for ${e.vendor}` }),
+              el('span', { className: 'bill-photo-badge' }, '🔍 Zoom Bill'),
+              el('label', { className: 'bill-change-btn', onclick: (ev) => ev.stopPropagation() }, 'Replace Photo', fileChangeInput)
+            );
+            card.append(photoWrap);
+          } else {
+            // Detailed realistic thermal receipt bill
+            const fileInput = el('input', { type: 'file', accept: 'image/*', style: 'display:none;' });
+            fileInput.onchange = (ev) => uploadBillPhoto(e.id, ev.target.files[0]);
+
+            const thermalSlip = el('div', { className: 'thermal-receipt-slip' },
+              el('div', { className: 'thermal-header' }, e.vendor.toUpperCase()),
+              el('div', { className: 'thermal-line' }, el('span', {}, 'DATE: ' + e.date), el('span', {}, 'TXN #' + e.id)),
+              el('div', { className: 'thermal-divider' }),
+              el('div', { className: 'thermal-line' }, el('span', {}, e.category), el('span', {}, money(e.amount - e.tax, e.currency))),
+              el('div', { className: 'thermal-line' }, el('span', {}, 'TAX / VAT'), el('span', {}, money(e.tax, e.currency))),
+              el('div', { className: 'thermal-divider' }),
+              el('div', { className: 'thermal-line', style: 'font-weight:800;font-size:12px;' }, el('span', {}, 'TOTAL PAID'), el('span', {}, money(e.amount, e.currency))),
+              el('div', { className: 'thermal-barcode' }),
+              el('label', { className: 'thermal-upload-zone' }, '📷 Attach / Drop Receipt Photo', fileInput)
+            );
+            card.append(thermalSlip);
+          }
+
+          // Total & Tax
+          card.append(
+            el('div', { className: 'bill-total-price' }, money(e.amount, e.currency)),
+            el('div', { className: 'bill-tax-line' }, `Tax: ${money(e.tax, e.currency)}  •  Net: ${money(e.amount - e.tax, e.currency)}`)
+          );
+
+          // Notes
+          if (e.notes) {
+            card.append(el('div', { style: 'font-size:11px;color:#64748b;margin-top:6px;font-style:italic;' }, `"${e.notes}"`));
+          }
+
+          // Actions footer
+          const confirmBtn = e.reviewed
+            ? el('span', { className: 'badge-pill success', style: 'font-size:10px;' }, '✅ Verified')
+            : el('button', { className: 'btn primary', style: 'padding:3px 8px;font-size:11px;', onclick: () => save(e.id, { reviewed: true }) }, 'Confirm');
+
+          const delBtn = el('button', {
+            className: 'btn danger', style: 'padding:3px 6px;font-size:11px;', onclick: async () => {
+              if (confirm('Delete ' + e.vendor + '?')) { await api('/api/expenses/' + e.id, { method: 'DELETE' }); toast('Deleted'); refresh(); }
+            }
+          }, 'Delete');
+
+          card.append(el('div', { className: 'bill-actions' }, confirmBtn, delBtn));
+
+          stack.append(card);
+        });
+
+        col.append(stack);
+        container.append(col);
+      });
+    }
+
+    /* ---- toolbar & exports ---- */
+    let st;
+    $('#search').oninput = () => { clearTimeout(st); st = setTimeout(refresh, 200); };
+    ['#catFilter', '#onlyReview', '#onlyFlagged'].forEach(s => $(s).onchange = refresh);
+
+    $('#addManual').onclick = async () => {
+      const vendor = prompt('Vendor / Merchant name?'); if (!vendor) return;
+      try {
+        await api('/api/expenses', { method: 'POST', body: { vendor, date: new Date().toISOString().slice(0, 10), amount: 0, category: 'Other' } });
+        selectedMonth = '';
+        $('#calActiveLabel').textContent = 'All time';
+        await refresh();
+        toast('New row added. Enter amount & tax.');
+      } catch (err) { toast(err.message); }
+    };
+
+    // Export Dropdown Toggle
+    const exportBtn = $('#exportBtn');
+    const exportDropdown = $('#exportDropdown');
+    exportBtn.onclick = (e) => { e.stopPropagation(); exportDropdown.classList.toggle('open'); };
+    document.addEventListener('click', () => exportDropdown.classList.remove('open'));
+
+    function triggerExport(format) {
+      exportDropdown.classList.remove('open');
+      const q = query();
+      q.set('format', format);
+      location.href = `/api/export.csv?` + q.toString();
+    }
+
+    /* ---- boot ---- */
+    async function boot() {
+      try {
+        const me = await api('/api/me');
+        cats = me.categories;
+        $('#who').textContent = me.email;
+        $('#mcpUrl').value = me.mcpUrl;
+        $('#catFilter').replaceChildren(el('option', { value: '' }, 'All categories'), ...cats.map(c => el('option', { value: c }, c)));
+        selectedMonth = '';
+        $('#calActiveLabel').textContent = 'All time';
+        $('#authView').hidden = true;
+        $('#appView').hidden = false;
+        $('#connectBox').open = !localStorage.getItem('rv_connected');
+        await refresh();
+      } catch {
+        showAuth();
       }
-
-      // Total & Tax
-      card.append(
-        el('div', { className: 'bill-total-price' }, money(e.amount, e.currency)),
-        el('div', { className: 'bill-tax-line' }, `Tax: ${money(e.tax, e.currency)}  •  Net: ${money(e.amount - e.tax, e.currency)}`)
-      );
-
-      // Notes
-      if (e.notes) {
-        card.append(el('div', { style: 'font-size:11px;color:#64748b;margin-top:6px;font-style:italic;' }, `"${e.notes}"`));
-      }
-
-      // Actions footer
-      const confirmBtn = e.reviewed
-        ? el('span', { className: 'badge-pill success', style: 'font-size:10px;' }, '✅ Verified')
-        : el('button', { className: 'btn primary', style: 'padding:3px 8px;font-size:11px;', onclick: () => save(e.id, { reviewed: true }) }, 'Confirm');
-
-      const delBtn = el('button', { className: 'btn danger', style: 'padding:3px 6px;font-size:11px;', onclick: async () => {
-        if (confirm('Delete ' + e.vendor + '?')) { await api('/api/expenses/' + e.id, { method: 'DELETE' }); toast('Deleted'); refresh(); }
-      } }, 'Delete');
-
-      card.append(el('div', { className: 'bill-actions' }, confirmBtn, delBtn));
-
-      stack.append(card);
-    });
-
-    col.append(stack);
-    container.append(col);
-  });
-}
-
-/* ---- toolbar & exports ---- */
-let st;
-$('#search').oninput = () => { clearTimeout(st); st = setTimeout(refresh, 200); };
-['#month', '#catFilter', '#onlyReview', '#onlyFlagged'].forEach(s => $(s).onchange = refresh);
-$('#allTime').onclick = () => { $('#month').value = ''; refresh(); };
-
-$('#addManual').onclick = async () => {
-  const vendor = prompt('Vendor / Merchant name?'); if (!vendor) return;
-  try {
-    await api('/api/expenses', { method: 'POST', body: { vendor, date: new Date().toISOString().slice(0, 10), amount: 0, category: 'Other' } });
-    $('#month').value = thisMonth;
-    await refresh();
-    toast('New row added. Enter amount & tax.');
-  } catch (err) { toast(err.message); }
-};
-
-// Export Dropdown Toggle
-const exportBtn = $('#exportBtn');
-const exportDropdown = $('#exportDropdown');
-exportBtn.onclick = (e) => { e.stopPropagation(); exportDropdown.classList.toggle('open'); };
-document.addEventListener('click', () => exportDropdown.classList.remove('open'));
-
-function triggerExport(format) {
-  exportDropdown.classList.remove('open');
-  const month = encodeURIComponent($('#month').value);
-  location.href = `/api/export.csv?format=${format}&month=${month}`;
-}
-
-/* ---- boot ---- */
-async function boot() {
-  try {
-    const me = await api('/api/me');
-    cats = me.categories;
-    $('#who').textContent = me.email;
-    $('#mcpUrl').value = me.mcpUrl;
-    $('#catFilter').replaceChildren(el('option', { value: '' }, 'All categories'), ...cats.map(c => el('option', { value: c }, c)));
-    if (!$('#month').value) $('#month').value = thisMonth;
-    $('#authView').hidden = true;
-    $('#appView').hidden = false;
-    $('#connectBox').open = !localStorage.getItem('rv_connected');
-    await refresh();
-  } catch {
-    showAuth();
-  }
-}
-$('#connectBox').addEventListener('toggle', () => { if (!$('#connectBox').open) localStorage.setItem('rv_connected', '1'); });
-boot();
-</script>
+    }
+    $('#connectBox').addEventListener('toggle', () => { if (!$('#connectBox').open) localStorage.setItem('rv_connected', '1'); });
+    boot();
+  </script>
 </body>
+
 </html>
