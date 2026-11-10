@@ -121,7 +121,7 @@ function normalize(input, partial) {
             amount: round2(Number(it.amount) || 0)
           }));
         }
-      } catch {}
+      } catch { }
     }
   } else if (!partial) out.items = [];
 
@@ -376,6 +376,62 @@ const TOOLS = [
     },
     annotations: { readOnlyHint: true },
   },
+  {
+    name: 'batch_add_expenses',
+    description: 'Bulk import multiple expenses at once from a credit card statement, bank PDF, or batch of receipt photos. Ingests all items in a single turn and returns an ingestion report.',
+    inputSchema: {
+      type: 'object',
+      required: ['expenses'],
+      properties: {
+        expenses: {
+          type: 'array',
+          description: 'List of receipt expenses to record.',
+          items: {
+            type: 'object',
+            required: ['vendor', 'date', 'amount'],
+            properties: {
+              vendor: { type: 'string', description: 'Merchant name.' },
+              date: { type: 'string', description: 'YYYY-MM-DD' },
+              amount: { type: 'number', description: 'Total paid including tax.' },
+              currency: { type: 'string', description: 'Default USD.' },
+              category: catEnum,
+              tax: { type: 'number', description: 'Tax amount if known.' },
+              payment_method: { type: 'string' },
+              notes: { type: 'string' },
+              image_url: { type: 'string' },
+              discrepancy: { type: 'string' },
+              policy_flag: { type: 'string' },
+            }
+          }
+        },
+        allow_duplicates: { type: 'boolean', description: 'If true, saves items even if suspected duplicates.' }
+      }
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+  },
+  {
+    name: 'tax_deduction_report',
+    description: 'Generate an accountant-ready tax deduction report and VAT/GST schedule for a month or tax year. Classifies 100% deductible business expenses, 50% partial meal write-offs, and recoverable input tax credits.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        year: { type: 'string', description: 'Tax year YYYY, e.g. "2026".' },
+        month: { type: 'string', description: 'Specific month YYYY-MM if not running for full year.' },
+      }
+    },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: 'audit_anomalies',
+    description: 'Run forensic fraud & audit detection across the ledger. Detects double charges within 48h, split-receipt structuring to bypass $75 caps, weekend corporate card charges, and abnormal price spikes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        month: { type: 'string', description: 'YYYY-MM to audit. Defaults to all time.' },
+      }
+    },
+    annotations: { readOnlyHint: true },
+  },
 ];
 const fmt = (e) => {
   let s = `#${e.id} ${e.date} ${e.vendor} | ${e.category} | ${e.currency} ${e.amount.toFixed(2)} (tax ${e.tax.toFixed(2)})${e.reviewed ? '' : ' [needs review]'}`;
@@ -425,8 +481,8 @@ function callTool(user, name, a = {}) {
         vendorSpend[e.vendor] = (vendorSpend[e.vendor] || 0) + e.amount;
         catSpend[e.category] = (catSpend[e.category] || 0) + e.amount;
       });
-      const topVendors = Object.entries(vendorSpend).sort((a,b) => b[1] - a[1]).slice(0, 3);
-      const topCats = Object.entries(catSpend).sort((a,b) => b[1] - a[1]);
+      const topVendors = Object.entries(vendorSpend).sort((a, b) => b[1] - a[1]).slice(0, 3);
+      const topCats = Object.entries(catSpend).sort((a, b) => b[1] - a[1]);
 
       let out = `📊 Financial & Policy Audit Insights ${month ? `(${month})` : '(All Time)'}:\n`;
       out += `• Total Spend: $${totalSpend.toFixed(2)} across ${list.length} receipts\n`;
@@ -457,6 +513,151 @@ function callTool(user, name, a = {}) {
         return `✅ Policy Compliant: Expense of $${Number(a.amount).toFixed(2)} at ${a.vendor} passes all corporate spend policies.`;
       }
       return `⚠️ Policy Warnings for ${a.vendor} ($${Number(a.amount).toFixed(2)}):\n` + violations.map(v => `• ${v}`).join('\n') + `\nRecommendation: Flag item for manager review upon submission.`;
+    }
+    case 'batch_add_expenses': {
+      const items = Array.isArray(a.expenses) ? a.expenses : [];
+      if (!items.length) return 'No expenses provided in batch.';
+      const saved = [];
+      const skipped = [];
+      let totalSum = 0;
+      for (const item of items) {
+        try {
+          const r = addExpense(user.id, item, 'claude', a.allow_duplicates === true);
+          if (r.duplicateOf) {
+            skipped.push(`${item.vendor} ($${Number(item.amount).toFixed(2)}) - duplicate of #${r.duplicateOf.id}`);
+          } else {
+            saved.push(r.expense);
+            totalSum += r.expense.amount;
+          }
+        } catch (err) {
+          skipped.push(`${item.vendor || 'Unknown'} - Error: ${err.message}`);
+        }
+      }
+      let out = `⚡ Batch Ingestion Complete: ${saved.length} saved, ${skipped.length} skipped.\n`;
+      out += `• Total Ingested Volume: $${totalSum.toFixed(2)}\n`;
+      if (saved.length) {
+        out += `\nSaved Receipts:\n` + saved.map(e => `  - #${e.id} ${e.date} ${e.vendor} ($${e.amount.toFixed(2)}) [${e.category}]`).join('\n');
+      }
+      if (skipped.length) {
+        out += `\n\nSkipped / Duplicate Items:\n` + skipped.map(s => `  - ${s}`).join('\n');
+      }
+      return out;
+    }
+    case 'tax_deduction_report': {
+      let rows = mine(user.id);
+      if (a.month) rows = rows.filter(e => e.date.startsWith(a.month));
+      else if (a.year) rows = rows.filter(e => e.date.startsWith(a.year));
+      if (!rows.length) return `No expenses found for tax period ${a.month || a.year || 'all time'}.`;
+
+      let fullDeductible = 0;
+      let halfDeductible = 0;
+      let nonDeductible = 0;
+      let totalVatGst = 0;
+
+      rows.forEach(e => {
+        totalVatGst += (e.tax || 0);
+        const cat = (e.category || '').toLowerCase();
+        if (cat === 'meals' || cat === 'food' || cat === 'entertainment') {
+          halfDeductible += e.amount;
+        } else if (cat === 'personal' || cat === 'fines') {
+          nonDeductible += e.amount;
+        } else {
+          fullDeductible += e.amount;
+        }
+      });
+
+      const eligibleHalf = halfDeductible * 0.5;
+      const totalEligibleDeduction = fullDeductible + eligibleHalf;
+      const periodLabel = a.month || a.year || 'All Time';
+
+      let out = `📋 Tax Deduction & VAT/GST Schedule (${periodLabel}):\n`;
+      out += `• Total Gross Spend: $${(fullDeductible + halfDeductible + nonDeductible).toFixed(2)}\n`;
+      out += `• Total Eligible Tax Deduction: $${totalEligibleDeduction.toFixed(2)}\n`;
+      out += `• Itemized VAT/GST Input Tax Credits (Recoverable): $${totalVatGst.toFixed(2)}\n\n`;
+
+      out += `Deduction Breakdown by Schedule:\n`;
+      out += `  - Standard Business (100% Deductible): $${fullDeductible.toFixed(2)} (Travel, Software, Supplies, Utilities)\n`;
+      out += `  - Meals & Entertainment (50% Deductible): $${halfDeductible.toFixed(2)} spent → $${eligibleHalf.toFixed(2)} eligible write-off\n`;
+      if (nonDeductible > 0) {
+        out += `  - Non-deductible / Personal: $${nonDeductible.toFixed(2)}\n`;
+      }
+      out += `\nRecommendation: Export as CSV for accountant attachment to corporate tax filing.`;
+      return out;
+    }
+    case 'audit_anomalies': {
+      let rows = mine(user.id);
+      if (a.month) rows = rows.filter(e => e.date.startsWith(a.month));
+      if (!rows.length) return `No transactions found to audit${a.month ? ` for ${a.month}` : ''}.`;
+
+      const anomalies = [];
+
+      // 1. Double billing detection: same vendor + same amount within 2 days
+      const sorted = rows.slice().sort((x, y) => x.date.localeCompare(y.date));
+      for (let i = 0; i < sorted.length; i++) {
+        for (let j = i + 1; j < sorted.length; j++) {
+          const a1 = sorted[i], a2 = sorted[j];
+          if (a1.vendor.toLowerCase() === a2.vendor.toLowerCase() && Math.abs(a1.amount - a2.amount) < 0.01) {
+            const diffDays = Math.abs(new Date(a2.date) - new Date(a1.date)) / (1000 * 60 * 60 * 24);
+            if (diffDays <= 2) {
+              anomalies.push({
+                risk: 'HIGH',
+                type: 'Potential Double Charge',
+                details: `${a1.vendor} charged $${a1.amount.toFixed(2)} on ${a1.date} (#${a1.id}) and again on ${a2.date} (#${a2.id})`
+              });
+            }
+          }
+        }
+      }
+
+      // 2. Structuring / Split transactions: same vendor on same date summing > $75
+      const dayVendorGroups = {};
+      rows.forEach(e => {
+        const key = `${e.date}__${e.vendor.toLowerCase()}`;
+        (dayVendorGroups[key] = dayVendorGroups[key] || []).push(e);
+      });
+      Object.entries(dayVendorGroups).forEach(([key, group]) => {
+        if (group.length > 1) {
+          const sum = group.reduce((s, g) => s + g.amount, 0);
+          if (sum > 75 && group.every(g => g.amount <= 75)) {
+            anomalies.push({
+              risk: 'MEDIUM',
+              type: 'Policy Evasion (Split Structuring)',
+              details: `${group[0].vendor} on ${group[0].date}: ${group.length} split receipts totaling $${sum.toFixed(2)} bypassing $75 cap`
+            });
+          }
+        }
+      });
+
+      // 3. Weekend transactions
+      rows.forEach(e => {
+        const day = new Date(e.date + 'T00:00:00Z').getUTCDay();
+        if (day === 0 || day === 6) {
+          anomalies.push({
+            risk: 'LOW',
+            type: 'Weekend Spend',
+            details: `#${e.id} ${e.vendor} ($${e.amount.toFixed(2)}) on ${e.date} (weekend)`
+          });
+        }
+      });
+
+      // 4. Any existing math discrepancies or policy flags
+      rows.filter(e => e.discrepancy).forEach(e => {
+        anomalies.push({
+          risk: 'HIGH',
+          type: 'Math Discrepancy',
+          details: `#${e.id} ${e.vendor}: ${e.discrepancy}`
+        });
+      });
+
+      if (!anomalies.length) {
+        return `✅ Forensic Audit Clean: Zero double charges, split transactions, or math mismatches detected across ${rows.length} receipts.`;
+      }
+
+      let out = `🕵️ Forensic Audit Findings (${anomalies.length} anomaly/anomalies detected):\n\n`;
+      anomalies.forEach((anom, idx) => {
+        out += `${idx + 1}. [${anom.risk} RISK] ${anom.type}\n   • ${anom.details}\n`;
+      });
+      return out;
     }
     default: throw new HttpError(404, `Unknown tool: ${name}`);
   }

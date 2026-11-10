@@ -27,7 +27,7 @@ Tools: `add_expense`, `list_expenses`, `update_expense`, `monthly_summary`, `spe
 - **Executive Analytics (`spending_insights`):** Claude acts as your financial analyst, answering queries about top spenders, quarterly variance, and policy compliance.
 - **Pre-submission Policy Checker (`check_policy`):** Pre-validates purchases against corporate rules directly in Claude chat.
 - **1-Click Accounting Exports:**
-  - **Volopay Reconciliation CSV:** Formatted directly for Volopay corporate card / ledger reconciliation.
+  - **Reconciliation CSV:** Formatted directly for corporate card / ledger reconciliation.
   - **QuickBooks & Xero Formats:** Ready for accountant journal and bills import.
   - **Standard CSV:** Complete audit ledger with formula-injection security.
 - **Fintech KPI Dashboard:** Real-time metrics for Total Spend, Pending Review count, Policy / Math Flags, and Tax Deductibles Tracked.

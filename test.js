@@ -25,7 +25,7 @@ server.listen(0, async () => {
     assert.equal(init.result.serverInfo.name, 'receipt-vault');
     assert.equal((await call('POST', mcp, { jsonrpc: '2.0', method: 'notifications/initialized' })).status, 202);
     const tools = (await rpc(2, 'tools/list')).body.result.tools.map(t => t.name);
-    assert.deepEqual(tools, ['add_expense', 'list_expenses', 'update_expense', 'monthly_summary', 'spending_insights', 'check_policy']);
+    assert.deepEqual(tools, ['add_expense', 'list_expenses', 'update_expense', 'monthly_summary', 'spending_insights', 'check_policy', 'batch_add_expenses', 'tax_deduction_report', 'audit_anomalies']);
     assert.equal((await call('POST', '/mcp/wrongtoken', { jsonrpc: '2.0', id: 1, method: 'ping' })).status, 401);
 
     // add via Claude
@@ -63,6 +63,21 @@ server.listen(0, async () => {
     assert.ok(insights.content[0].text.includes('Financial & Policy Audit Insights'), insights.content[0].text);
     const policy = await tool('check_policy', { vendor: 'Fancy Steakhouse', amount: 150, category: 'Meals' });
     assert.ok(policy.content[0].text.includes('Policy Warnings'), policy.content[0].text);
+
+    // Test new tools: batch_add_expenses, tax_deduction_report, audit_anomalies
+    const batchRes = await tool('batch_add_expenses', {
+      expenses: [
+        { vendor: 'AWS Cloud', date: '2026-11-01', amount: 85.0, category: 'Software', tax: 8.5 },
+        { vendor: 'Figma', date: '2026-11-02', amount: 15.0, category: 'Software', tax: 1.5 }
+      ]
+    });
+    assert.ok(batchRes.content[0].text.includes('Batch Ingestion Complete: 2 saved'), batchRes.content[0].text);
+
+    const taxRes = await tool('tax_deduction_report', { month: '2026-11' });
+    assert.ok(taxRes.content[0].text.includes('Tax Deduction & VAT/GST Schedule'), taxRes.content[0].text);
+
+    const auditRes = await tool('audit_anomalies', { month: '2026-11' });
+    assert.ok(auditRes.content[0].text.includes('Forensic Audit'), auditRes.content[0].text);
 
     // CSV, with formula-injection guard and Volopay format
     await tool('add_expense', { vendor: '=HYPERLINK("evil")', date: '2026-11-10', amount: 1 });

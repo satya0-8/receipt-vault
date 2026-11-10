@@ -358,18 +358,22 @@
     }
 
     /* KPI Stats Dashboard */
+    .summary-section {
+      margin: 20px 0 24px;
+    }
+
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      margin: 24px 0 20px;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
     }
 
     .kpi-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 18px 20px;
+      padding: 16px 18px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
@@ -377,30 +381,93 @@
       gap: 8px;
       position: relative;
       overflow: hidden;
+      transition: all 0.15s ease;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--text-muted);
+      box-shadow: var(--shadow-md);
+    }
+
+    .kpi-card.clickable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .kpi-card.clickable:hover {
+      transform: translateY(-1px);
     }
 
     .kpi-card.highlight {
       border-left: 4px solid var(--warn-ink);
     }
 
+    .kpi-card.highlight.active-filter {
+      background: var(--warn-bg);
+      border-color: var(--warn-ink);
+      box-shadow: 0 0 0 1px var(--warn-ink);
+    }
+
     .kpi-card.alert {
       border-left: 4px solid var(--danger-ink);
     }
 
+    .kpi-card.alert.active-filter {
+      background: var(--danger-bg);
+      border-color: var(--danger-ink);
+      box-shadow: 0 0 0 1px var(--danger-ink);
+    }
+
+    .kpi-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
     .kpi-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       color: var(--text-muted);
     }
 
+    .kpi-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+    }
+
+    .kpi-badge.warn {
+      background: var(--warn-bg);
+      color: var(--warn-ink);
+      border: 1px solid var(--warn-border);
+    }
+
+    .kpi-badge.danger {
+      background: var(--danger-bg);
+      color: var(--danger-ink);
+      border: 1px solid var(--danger-border);
+    }
+
+    .kpi-badge.success {
+      background: var(--success-bg);
+      color: var(--success-ink);
+      border: 1px solid var(--success-border);
+    }
+
     .kpi-val {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
       letter-spacing: -0.03em;
       font-variant-numeric: tabular-nums;
       color: var(--text);
+      line-height: 1.15;
     }
 
     .kpi-sub {
@@ -411,15 +478,166 @@
       gap: 6px;
     }
 
-    /* Category Breakdown Bars */
+    /* Category Breakdown UI */
     .cat-breakdown {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       padding: 18px 20px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
     }
 
+    .cat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .cat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .cat-count-badge {
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: 9999px;
+    }
+
+    .cat-header-right {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Segmented Progress Bar */
+    .segmented-bar-wrap {
+      width: 100%;
+      height: 14px;
+      background: var(--surface-subtle);
+      border-radius: 9999px;
+      overflow: hidden;
+      display: flex;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .segmented-bar-item {
+      height: 100%;
+      position: relative;
+      cursor: pointer;
+      transition: filter 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+      border-right: 2px solid var(--surface);
+    }
+
+    .segmented-bar-item:last-child {
+      border-right: none;
+    }
+
+    .segmented-bar-item:hover {
+      filter: brightness(1.18);
+      z-index: 2;
+    }
+
+    /* Interactive Category Legend Grid / Chips */
+    .cat-legend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .cat-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+      font-size: 12px;
+      user-select: none;
+    }
+
+    .cat-chip:hover {
+      background: var(--surface-subtle);
+      border-color: var(--text-muted);
+      transform: translateY(-1px);
+    }
+
+    .cat-chip.active {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .cat-chip-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .cat-chip-name {
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .cat-chip.active .cat-chip-name {
+      color: var(--accent);
+    }
+
+    .cat-chip-amount {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+
+    .cat-chip.active .cat-chip-amount {
+      color: var(--accent);
+    }
+
+    .cat-chip-pct {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--surface-subtle);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cat-chip.active .cat-chip-pct {
+      background: rgba(15, 118, 110, 0.18);
+      color: var(--accent);
+    }
+
+    /* Fallback Bar Rows (if used) */
     .cat-bars {
       display: grid;
       gap: 8px;
@@ -788,16 +1006,217 @@
       min-height: 580px;
     }
 
+    .board-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .board-actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .board-months {
       display: flex;
       gap: 26px;
       overflow-x: auto;
-      padding-bottom: 20px;
+      padding-bottom: 30px;
       align-items: flex-start;
+      min-height: 520px;
     }
 
+    /* macOS Desktop Folder Stack */
+    .mac-stack-folder {
+      width: 210px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      padding: 18px 14px;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(10px);
+      border: 1px dashed rgba(120, 100, 80, 0.35);
+      border-radius: var(--radius-md);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      user-select: none;
+    }
+
+    .mac-stack-folder:hover {
+      background: rgba(255, 255, 255, 0.7);
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 16px 30px -4px rgba(0, 0, 0, 0.15);
+      border-color: var(--accent);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .mac-stack-folder {
+        background: rgba(30, 41, 59, 0.45);
+        border-color: rgba(255, 255, 255, 0.15);
+      }
+
+      .mac-stack-folder:hover {
+        background: rgba(30, 41, 59, 0.75);
+      }
+    }
+
+    .mac-stack-visual {
+      position: relative;
+      width: 130px;
+      height: 140px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mac-stack-layer {
+      position: absolute;
+      width: 105px;
+      height: 125px;
+      background: #ffffff;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .mac-stack-layer.layer-3 {
+      transform: rotate(-6deg) translate(-5px, -4px);
+      background: #f1f5f9;
+      z-index: 1;
+    }
+
+    .mac-stack-layer.layer-2 {
+      transform: rotate(5deg) translate(5px, -2px);
+      background: #f8fafc;
+      z-index: 2;
+    }
+
+    .mac-stack-layer.layer-1 {
+      transform: rotate(0deg);
+      background: #ffffff;
+      z-index: 3;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .mac-stack-layer.layer-3 {
+        background: #1e293b;
+      }
+
+      .mac-stack-layer.layer-2 {
+        background: #334155;
+      }
+
+      .mac-stack-layer.layer-1 {
+        background: #0f172a;
+        border-color: #475569;
+      }
+    }
+
+    .mac-stack-folder:hover .mac-stack-layer.layer-3 {
+      transform: rotate(-14deg) translate(-12px, -8px);
+    }
+
+    .mac-stack-folder:hover .mac-stack-layer.layer-2 {
+      transform: rotate(12deg) translate(12px, -6px);
+    }
+
+    .mac-stack-folder:hover .mac-stack-layer.layer-1 {
+      transform: rotate(0deg) translateY(-3px);
+    }
+
+    .mac-stack-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .mac-stack-slip {
+      padding: 10px 8px;
+      font-size: 10px;
+      color: #334155;
+      text-align: center;
+      line-height: 1.3;
+      width: 100%;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .mac-stack-slip {
+        color: #cbd5e1;
+      }
+    }
+
+    .mac-stack-badge {
+      position: absolute;
+      top: -4px;
+      right: 4px;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      z-index: 10;
+      border: 2px solid #ffffff;
+    }
+
+    .mac-stack-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .mac-stack-title {
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .mac-stack-total {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .mac-stack-hint {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 6px;
+      background: rgba(0, 0, 0, 0.06);
+      padding: 2px 8px;
+      border-radius: 9999px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .mac-stack-hint {
+        background: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    /* Expanded Month Column */
     .board-month-column {
-      flex: 0 0 350px;
+      flex: 0 0 360px;
       background: rgba(255, 255, 255, 0.45);
       backdrop-filter: blur(8px);
       border: 1px dashed rgba(120, 100, 80, 0.35);
@@ -810,18 +1229,46 @@
       position: relative;
     }
 
+    @media (prefers-color-scheme: dark) {
+      .board-month-column {
+        background: rgba(30, 41, 59, 0.45);
+        border-color: rgba(255, 255, 255, 0.15);
+      }
+    }
+
     .month-col-head {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
       border-bottom: 2px dashed rgba(120, 100, 80, 0.3);
       padding-bottom: 10px;
       user-select: none;
     }
 
+    .month-collapse-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .month-collapse-btn:hover {
+      background: var(--surface-subtle);
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+
     .month-col-title {
       font-weight: 800;
-      font-size: 16px;
+      font-size: 15px;
       letter-spacing: -0.01em;
       color: var(--text);
       display: flex;
@@ -832,7 +1279,7 @@
     .month-col-total {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 15px;
+      font-size: 14px;
       color: var(--accent);
     }
 
@@ -840,29 +1287,52 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
+      position: relative;
     }
 
-    /* Tactile Pinned Bill Note */
+    /* Tactile Pinned Bill Note (Draggable & Resizable) */
     .pinned-bill {
       background: #ffffff;
-      border-radius: 4px;
-      padding: 16px 14px 14px;
+      border-radius: 8px;
+      padding: 16px 14px 16px;
       box-shadow: var(--shadow-pin);
       position: relative;
-      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
       cursor: grab;
       color: #17212b;
       border: 1px solid rgba(0, 0, 0, 0.08);
+      /* Native CSS Resize */
+      resize: both;
+      overflow: hidden;
+      min-width: 260px;
+      min-height: 220px;
+      max-width: 700px;
+      touch-action: none;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
     }
 
-    .pinned-bill:active {
-      cursor: grabbing;
-      transform: scale(1.03) !important;
-      z-index: 100;
+    .pinned-bill.is-dragging {
+      cursor: grabbing !important;
+      opacity: 0.96;
+      box-shadow: 0 24px 44px -4px rgba(0, 0, 0, 0.35);
+      z-index: 9999 !important;
+      transition: none !important;
+    }
+
+    .bill-resize-handle {
+      position: absolute;
+      bottom: 2px;
+      right: 3px;
+      width: 14px;
+      height: 14px;
+      cursor: nwse-resize;
+      color: #94a3b8;
+      font-size: 11px;
+      line-height: 1;
+      pointer-events: none;
+      user-select: none;
     }
 
     .pinned-bill:hover {
-      transform: translateY(-3px) scale(1.01) !important;
       box-shadow: 0 16px 30px -4px rgba(0, 0, 0, 0.2);
     }
 
@@ -1280,6 +1750,10 @@
               <div class="prompt-chips">
                 <span class="prompt-chip" onclick="copyPrompt(this)">📸 "Add this receipt photo and pin it to my Notice
                   Board"</span>
+                <span class="prompt-chip" onclick="copyPrompt(this)">📋 "Generate my Q4 tax deduction report and VAT
+                  schedule"</span>
+                <span class="prompt-chip" onclick="copyPrompt(this)">🕵️ "Audit my expenses for double-billing and split
+                  structuring"</span>
                 <span class="prompt-chip" onclick="copyPrompt(this)">📊 "Run spending_insights for this month and list
                   top merchants"</span>
                 <span class="prompt-chip" onclick="copyPrompt(this)">⚖️ "Check compliance for a $95 team lunch at Joe's
@@ -1292,36 +1766,67 @@
     </section>
 
     <main class="wrap">
-      <!-- KPI Stat Cards -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <span class="kpi-title">Total Spend</span>
-          <div class="kpi-val" id="kpiSpend">$0.00</div>
-          <div class="kpi-sub" id="kpiCount">0 receipts recorded</div>
+      <!-- KPI Stat Cards & Category Breakdown -->
+      <section class="summary-section" id="sum">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header-row">
+              <span class="kpi-title">Total Spend</span>
+            </div>
+            <div class="kpi-val" id="kpiSpend">$0.00</div>
+            <div class="kpi-sub" id="kpiCount">0 receipts recorded</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header-row">
+              <span class="kpi-title">Net Spend</span>
+              <span class="kpi-badge success">Pre-tax</span>
+            </div>
+            <div class="kpi-val" id="kpiNet">$0.00</div>
+            <div class="kpi-sub">Business expense excluding tax</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header-row">
+              <span class="kpi-title">Tax (Deductible)</span>
+              <span class="kpi-badge"
+                style="background:var(--surface-subtle);color:var(--text-muted);border:1px solid var(--border);">VAT /
+                GST</span>
+            </div>
+            <div class="kpi-val" id="kpiTax">$0.00</div>
+            <div class="kpi-sub">Itemized deductible tax</div>
+          </div>
+          <div class="kpi-card highlight clickable" id="kpiReviewCard" title="Click to filter needs review">
+            <div class="kpi-header-row">
+              <span class="kpi-title">Pending Review</span>
+              <span class="kpi-badge warn">Action Needed</span>
+            </div>
+            <div class="kpi-val" id="kpiReview">0</div>
+            <div class="kpi-sub">Added by Claude • Needs confirmation</div>
+          </div>
+          <div class="kpi-card alert clickable" id="kpiFlagCard" title="Click to filter discrepancies & warnings">
+            <div class="kpi-header-row">
+              <span class="kpi-title">Policy & Math Alerts</span>
+              <span class="kpi-badge danger">Alerts</span>
+            </div>
+            <div class="kpi-val" id="kpiFlags">0</div>
+            <div class="kpi-sub">Discrepancies / Policy warnings</div>
+          </div>
         </div>
-        <div class="kpi-card highlight" id="kpiReviewCard">
-          <span class="kpi-title">Pending Review</span>
-          <div class="kpi-val" id="kpiReview">0</div>
-          <div class="kpi-sub">Added by Claude • Needs confirmation</div>
-        </div>
-        <div class="kpi-card alert" id="kpiFlagCard">
-          <span class="kpi-title">Policy & Math Alerts</span>
-          <div class="kpi-val" id="kpiFlags">0</div>
-          <div class="kpi-sub">Discrepancies / Policy warnings</div>
-        </div>
-        <div class="kpi-card">
-          <span class="kpi-title">Tax Tracked (Deductible)</span>
-          <div class="kpi-val" id="kpiTax">$0.00</div>
-          <div class="kpi-sub">Itemized VAT/GST for accountant</div>
-        </div>
-      </div>
 
-      <!-- Category Breakdown Bar Chart -->
-      <div class="cat-breakdown" id="catBox" hidden>
-        <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-muted);">Spend by Category
+        <!-- Modern Category Breakdown Bar Chart -->
+        <div class="cat-breakdown" id="catBox" hidden>
+          <div class="cat-header">
+            <div class="cat-header-left">
+              <span class="cat-title">Spend by Category</span>
+              <span class="cat-count-badge" id="catCountBadge">0 categories</span>
+            </div>
+            <div class="cat-header-right" id="catTotalShare"></div>
+          </div>
+          <div class="segmented-bar-wrap" id="segmentedBar" role="progressbar" aria-label="Category spend distribution">
+          </div>
+          <div class="cat-legend-grid" id="catLegendGrid"></div>
+          <div class="cat-bars" id="catBars" style="display:none;"></div>
         </div>
-        <div class="cat-bars" id="catBars"></div>
-      </div>
+      </section>
 
       <!-- Toolbar -->
       <div class="toolbar">
@@ -1386,7 +1891,7 @@
           <button class="btn primary" id="exportBtn">Export CSV ▾</button>
           <div class="export-dropdown" id="exportDropdown">
             <div class="export-item" onclick="triggerExport('volopay')">
-              <span class="export-item-title">🟢 Volopay Format (Recommended)</span>
+              <span class="export-item-title">🟢 Table Format (Recommended)</span>
               <span class="export-item-sub">Ready for corporate reconciliation & upload</span>
             </div>
             <div class="export-item" onclick="triggerExport('quickbooks')">
@@ -1411,16 +1916,25 @@
       </div>
 
       <!-- 2. 📌 Notice Board View (Stacked by Month with Bill Images) -->
+      <!-- 2. 📌 Notice Board View (macOS Desktop Stacks & Freeform Draggable Canvas) -->
       <div id="boardView" hidden>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div class="board-top-bar">
           <div>
             <h2 style="font-size:18px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px;">
               📌 Bill & Receipt Notice Board
             </h2>
             <p style="font-size:12px;color:var(--text-muted);">
-              Receipt bills compiled by Claude, pinned and stacked by month. Drag & drop receipt photos onto any bill,
-              or click to zoom in.
+              macOS-style Desktop Stacks & Draggable Bills. Click any monthly stack folder to fan it open. Drag bills
+              anywhere, or pull corner grips to resize.
             </p>
+          </div>
+          <div class="board-actions-bar">
+            <button type="button" class="btn" id="btnToggleAllStacks" onclick="toggleAllBoardStacks()">
+              <span id="labelToggleAllStacks">📂 Expand All Stacks</span>
+            </button>
+            <button type="button" class="btn" onclick="resetBoardPositions()" title="Reset custom bill positions">
+              <span>↺ Reset Positions</span>
+            </button>
           </div>
         </div>
         <div class="board-months" id="boardMonthsContainer"></div>
@@ -1632,31 +2146,124 @@
       if (currentView === 'board') renderBoard(list.rows);
     }
 
+    const CAT_PALETTE = {
+      'travel': '#0d9488', // Teal
+      'office supplies': '#3b82f6', // Blue
+      'transport': '#8b5cf6', // Violet
+      'meals': '#f59e0b', // Amber
+      'food': '#f59e0b',
+      'software': '#ec4899', // Pink
+      'groceries': '#10b981', // Emerald
+      'lodging': '#06b6d4', // Cyan
+      'utilities': '#6366f1', // Indigo
+      'entertainment': '#f97316', // Orange
+      'health': '#14b8a6', // Turquoise
+      'services': '#64748b', // Slate
+      'other': '#94a3b8'
+    };
+    const FALLBACK_PALETTE = [
+      '#0d9488', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899',
+      '#10b981', '#06b6d4', '#6366f1', '#f97316', '#14b8a6', '#64748b'
+    ];
+    function getCatColor(category, index) {
+      const key = String(category || '').trim().toLowerCase();
+      return CAT_PALETTE[key] || FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+    }
+
     function renderSummary(s, rows) {
       const primaryCur = (s.totals[0] && s.totals[0].currency) || 'USD';
       const totalAmount = s.totals.reduce((acc, t) => acc + t.total, 0);
+      const totalTax = s.totalTax || 0;
+      const netAmount = Math.max(0, totalAmount - totalTax);
+
       $('#kpiSpend').textContent = money(totalAmount, primaryCur);
+      if ($('#kpiNet')) $('#kpiNet').textContent = money(netAmount, primaryCur);
       $('#kpiCount').textContent = `${s.totalCount || rows.length} receipts recorded`;
       $('#kpiReview').textContent = s.needsReview || 0;
       $('#kpiFlags').textContent = s.flaggedCount || 0;
-      $('#kpiTax').textContent = money(s.totalTax || 0, primaryCur);
+      $('#kpiTax').textContent = money(totalTax, primaryCur);
 
-      // Category bars
+      // Active state highlight on KPI filter cards
+      const reviewActive = $('#onlyReview') && $('#onlyReview').checked;
+      const flagActive = $('#onlyFlagged') && $('#onlyFlagged').checked;
+      if ($('#kpiReviewCard')) $('#kpiReviewCard').classList.toggle('active-filter', !!reviewActive);
+      if ($('#kpiFlagCard')) $('#kpiFlagCard').classList.toggle('active-filter', !!flagActive);
+
+      // Category breakdown & segmented progress bar
       const catBox = $('#catBox');
+      const segmentedBar = $('#segmentedBar');
+      const catLegendGrid = $('#catLegendGrid');
       const catBars = $('#catBars');
-      catBars.replaceChildren();
-      if (s.totals.length && s.totals[0].byCategory.length) {
+      if (catBars) catBars.replaceChildren();
+      if (segmentedBar) segmentedBar.replaceChildren();
+      if (catLegendGrid) catLegendGrid.replaceChildren();
+
+      const items = (s.totals.length && s.totals[0].byCategory) || [];
+      if (items.length > 0 && totalAmount > 0) {
         catBox.hidden = false;
-        const items = s.totals[0].byCategory;
-        const max = Math.max(...items.map(c => c.amount), 1);
-        items.forEach(c => {
-          catBars.append(el('div', { className: 'cat-bar-row' },
-            el('span', { style: 'font-weight:600;' }, c.category),
-            el('div', { className: 'bar-track' },
-              (() => { const f = el('div', { className: 'bar-fill' }); f.style.width = (c.amount / max * 100) + '%'; return f; })()
-            ),
-            el('span', { style: 'text-align:right;font-weight:600;' }, money(c.amount, primaryCur))
-          ));
+        if ($('#catCountBadge')) $('#catCountBadge').textContent = `${items.length} ${items.length === 1 ? 'category' : 'categories'}`;
+        if ($('#catTotalShare')) $('#catTotalShare').textContent = `${money(totalAmount, primaryCur)} total`;
+
+        const activeCat = ($('#catFilter') && $('#catFilter').value) || '';
+
+        items.forEach((c, idx) => {
+          const color = getCatColor(c.category, idx);
+          const pct = Math.max(0.5, (c.amount / totalAmount) * 100);
+          const pctText = ((c.amount / totalAmount) * 100).toFixed(1) + '%';
+
+          // 1. Segmented Bar Element
+          if (segmentedBar) {
+            const seg = el('div', {
+              className: 'segmented-bar-item',
+              title: `${c.category}: ${money(c.amount, primaryCur)} (${pctText}) - Click to filter`
+            });
+            seg.style.width = pct + '%';
+            seg.style.backgroundColor = color;
+            seg.onclick = () => {
+              if ($('#catFilter')) {
+                $('#catFilter').value = ($('#catFilter').value === c.category) ? '' : c.category;
+                refresh();
+              }
+            };
+            segmentedBar.appendChild(seg);
+          }
+
+          // 2. Interactive Legend Chip
+          if (catLegendGrid) {
+            const isSelected = activeCat && activeCat.toLowerCase() === c.category.toLowerCase();
+            const chip = el('button', {
+              type: 'button',
+              className: 'cat-chip' + (isSelected ? ' active' : ''),
+              title: isSelected ? 'Click to clear filter' : `Click to filter by ${c.category}`
+            });
+            chip.onclick = () => {
+              if ($('#catFilter')) {
+                $('#catFilter').value = isSelected ? '' : c.category;
+                refresh();
+              }
+            };
+
+            const dot = el('span', { className: 'cat-chip-dot' });
+            dot.style.backgroundColor = color;
+
+            const name = el('span', { className: 'cat-chip-name' }, c.category);
+            const amt = el('span', { className: 'cat-chip-amount' }, money(c.amount, primaryCur));
+            const pctSpan = el('span', { className: 'cat-chip-pct' }, pctText);
+
+            chip.append(dot, name, amt, pctSpan);
+            catLegendGrid.appendChild(chip);
+          }
+
+          // 3. Fallback compatibility rows for catBars
+          if (catBars) {
+            catBars.append(el('div', { className: 'cat-bar-row' },
+              el('span', { style: 'font-weight:600;' }, c.category),
+              el('div', { className: 'bar-track' },
+                (() => { const f = el('div', { className: 'bar-fill' }); f.style.width = pct + '%'; f.style.backgroundColor = color; return f; })()
+              ),
+              el('span', { style: 'text-align:right;font-weight:600;' }, money(c.amount, primaryCur))
+            ));
+          }
         });
       } else {
         catBox.hidden = true;
@@ -1773,7 +2380,101 @@
       box.append(el('table', {}, el('thead', {}, head), el('tbody', {}, body)));
     }
 
-    /* ---- 📌 NOTICE BOARD RENDER (Stacked by Month with Bill Images) ---- */
+    /* ---- 📌 NOTICE BOARD RENDER (macOS Desktop Stacks & Resizable Draggable Bills) ---- */
+    let expandedMonths = new Set();
+    let cardPositions = {};
+    try {
+      cardPositions = JSON.parse(localStorage.getItem('rv_card_positions') || '{}');
+    } catch { }
+
+    function saveCardPosition(id, pos) {
+      cardPositions[id] = pos;
+      try { localStorage.setItem('rv_card_positions', JSON.stringify(cardPositions)); } catch { }
+    }
+
+    function resetBoardPositions() {
+      cardPositions = {};
+      try { localStorage.removeItem('rv_card_positions'); } catch { }
+      toast('Board bill positions & sizes reset.');
+      renderBoard(lastLoadedRows);
+    }
+
+    function toggleAllBoardStacks() {
+      const allMonths = [...new Set(lastLoadedRows.map(e => e.date.slice(0, 7) || 'Other'))];
+      const btnLabel = $('#labelToggleAllStacks');
+      if (expandedMonths.size >= allMonths.length) {
+        expandedMonths.clear();
+        if (btnLabel) btnLabel.textContent = '📂 Expand All Stacks';
+      } else {
+        allMonths.forEach(m => expandedMonths.add(m));
+        if (btnLabel) btnLabel.textContent = '📁 Collapse All to Stacks';
+      }
+      renderBoard(lastLoadedRows);
+    }
+
+    function setupDraggable(card, id) {
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let pos = cardPositions[id] || { x: 0, y: 0 };
+      let currentX = pos.x || 0;
+      let currentY = pos.y || 0;
+
+      if (currentX !== 0 || currentY !== 0) {
+        card.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      }
+      if (pos.width) card.style.width = pos.width;
+      if (pos.height) card.style.height = pos.height;
+
+      // Track size changes via ResizeObserver
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(() => {
+          if (card.style.width || card.style.height) {
+            pos.width = card.style.width;
+            pos.height = card.style.height;
+            saveCardPosition(id, pos);
+          }
+        });
+        ro.observe(card);
+      }
+
+      card.addEventListener('pointerdown', (e) => {
+        // Don't drag if clicking buttons, inputs, file upload zones, or the bottom-right resize corner
+        if (e.target.closest('button, input, select, textarea, a, .bill-change-btn, .thermal-upload-zone, .bill-photo-wrap')) return;
+        const rect = card.getBoundingClientRect();
+        if (e.clientX > rect.right - 24 && e.clientY > rect.bottom - 24) return;
+
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        card.classList.add('is-dragging');
+        card.setPointerCapture(e.pointerId);
+      });
+
+      card.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        card.style.transform = `translate(${currentX + dx}px, ${currentY + dy}px)`;
+      });
+
+      const stopDrag = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        currentX += dx;
+        currentY += dy;
+        pos.x = currentX;
+        pos.y = currentY;
+        saveCardPosition(id, pos);
+        card.classList.remove('is-dragging');
+        try { card.releasePointerCapture(e.pointerId); } catch { }
+      };
+
+      card.addEventListener('pointerup', stopDrag);
+      card.addEventListener('pointercancel', stopDrag);
+    }
+
     function renderBoard(rows) {
       const container = $('#boardMonthsContainer');
       container.replaceChildren();
@@ -1792,8 +2493,13 @@
         (byMonth[m] = byMonth[m] || []).push(e);
       });
 
-      // Sort months descending (newest first)
       const sortedMonths = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
+
+      // Update button label
+      const btnLabel = $('#labelToggleAllStacks');
+      if (btnLabel) {
+        btnLabel.textContent = (expandedMonths.size >= sortedMonths.length) ? '📁 Collapse All to Stacks' : '📂 Expand All Stacks';
+      }
 
       sortedMonths.forEach((monthKey, colIdx) => {
         const monthExpenses = byMonth[monthKey];
@@ -1806,25 +2512,79 @@
           monthTitle = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric', timeZone: 'UTC' });
         } catch { }
 
+        // 📁 1. FOLDER STACK (macOS Desktop Stacks behavior)
+        if (!expandedMonths.has(monthKey)) {
+          const stackFolder = el('div', {
+            className: 'mac-stack-folder',
+            title: `Click to open ${monthTitle} stack (${monthExpenses.length} bills)`
+          });
+          stackFolder.onclick = () => {
+            expandedMonths.add(monthKey);
+            renderBoard(rows);
+          };
+
+          const visual = el('div', { className: 'mac-stack-visual' });
+          const layer3 = el('div', { className: 'mac-stack-layer layer-3' });
+          const layer2 = el('div', { className: 'mac-stack-layer layer-2' });
+          const layer1 = el('div', { className: 'mac-stack-layer layer-1' });
+
+          // Top layer preview: attached photo or realistic mini receipt
+          const firstWithImg = monthExpenses.find(e => e.image_url);
+          const topExp = firstWithImg || monthExpenses[0];
+
+          if (topExp && topExp.image_url) {
+            layer1.append(el('img', { src: topExp.image_url, className: 'mac-stack-thumb', alt: topExp.vendor }));
+          } else if (topExp) {
+            layer1.append(el('div', { className: 'mac-stack-slip' },
+              el('div', { style: 'font-weight:800;font-size:11px;' }, topExp.vendor.toUpperCase()),
+              el('div', { style: 'font-weight:800;color:var(--accent);margin-top:2px;' }, money(topExp.amount, monthCur)),
+              el('div', { style: 'font-size:9px;color:var(--text-muted);margin-top:2px;' }, topExp.category)
+            ));
+          }
+
+          const badge = el('span', { className: 'mac-stack-badge' }, `${monthExpenses.length}`);
+          visual.append(layer3, layer2, layer1, badge);
+
+          const info = el('div', { className: 'mac-stack-info' },
+            el('span', { className: 'mac-stack-title' }, `📁 ${monthTitle}`),
+            el('span', { className: 'mac-stack-total' }, money(monthTotal, monthCur)),
+            el('span', { className: 'mac-stack-hint' }, 'Click stack to open')
+          );
+
+          stackFolder.append(visual, info);
+          container.append(stackFolder);
+          return;
+        }
+
+        // 📂 2. EXPANDED STACK COLUMN (Draggable & Resizable Bills Canvas)
         const col = el('div', { className: 'board-month-column' });
 
-        // Month column header
+        const collapseBtn = el('button', {
+          type: 'button',
+          className: 'month-collapse-btn',
+          title: 'Stack receipts back into folder'
+        }, '▼ Stack Folder');
+        collapseBtn.onclick = () => {
+          expandedMonths.delete(monthKey);
+          renderBoard(rows);
+        };
+
         col.append(el('div', { className: 'month-col-head' },
           el('span', { className: 'month-col-title' }, `📅 ${monthTitle}`),
-          el('span', { className: 'month-col-total' }, money(monthTotal, monthCur))
+          el('span', { className: 'month-col-total' }, money(monthTotal, monthCur)),
+          collapseBtn
         ));
 
         const stack = el('div', { className: 'board-cards-stack' });
 
-        monthExpenses.forEach((e, idx) => {
-          const rotations = [-1.5, 1.2, -0.8, 1.8, -1.2, 0.9];
-          const rot = rotations[(colIdx * 3 + idx) % rotations.length];
-
+        monthExpenses.forEach((e) => {
           const card = el('div', {
             className: 'pinned-bill',
-            style: `transform: rotate(${rot}deg);`,
-            draggable: 'true'
+            title: 'Drag to move • Pull bottom-right corner to resize'
           });
+
+          // Enable freeform dragging & resizing
+          setupDraggable(card, e.id);
 
           // Drag and drop attachment support
           card.ondragover = (ev) => { ev.preventDefault(); card.classList.add('drop-active'); };
@@ -1837,11 +2597,14 @@
             }
           };
 
-          // Pushpin (gold if verified, red if needs review)
+          // Pushpin
           const pin = el('span', { className: `note-pin ${e.reviewed ? 'gold' : ''}` });
           card.append(pin);
 
-          // Caution tape if discrepancy or policy flag
+          // Resize indicator grip
+          card.append(el('span', { className: 'bill-resize-handle' }, '⤡'));
+
+          // Discrepancy / Policy flag tape
           if (e.discrepancy) {
             card.append(el('span', { className: 'caution-tape', title: e.discrepancy }, '⚠️ ' + e.discrepancy));
           } else if (e.policy_flag) {
@@ -1857,7 +2620,7 @@
             )
           );
 
-          // 📸 BILL PHOTO DISPLAY
+          // Bill Photo / Receipt Slip
           if (e.image_url) {
             const fileChangeInput = el('input', { type: 'file', accept: 'image/*', style: 'display:none;' });
             fileChangeInput.onchange = (ev) => uploadBillPhoto(e.id, ev.target.files[0]);
@@ -1869,7 +2632,6 @@
             );
             card.append(photoWrap);
           } else {
-            // Detailed realistic thermal receipt bill
             const fileInput = el('input', { type: 'file', accept: 'image/*', style: 'display:none;' });
             fileInput.onchange = (ev) => uploadBillPhoto(e.id, ev.target.files[0]);
 
@@ -1893,7 +2655,6 @@
             el('div', { className: 'bill-tax-line' }, `Tax: ${money(e.tax, e.currency)}  •  Net: ${money(e.amount - e.tax, e.currency)}`)
           );
 
-          // Notes
           if (e.notes) {
             card.append(el('div', { style: 'font-size:11px;color:#64748b;margin-top:6px;font-style:italic;' }, `"${e.notes}"`));
           }
@@ -1910,7 +2671,6 @@
           }, 'Delete');
 
           card.append(el('div', { className: 'bill-actions' }, confirmBtn, delBtn));
-
           stack.append(card);
         });
 
@@ -1923,6 +2683,18 @@
     let st;
     $('#search').oninput = () => { clearTimeout(st); st = setTimeout(refresh, 200); };
     ['#catFilter', '#onlyReview', '#onlyFlagged'].forEach(s => $(s).onchange = refresh);
+    if ($('#kpiReviewCard')) {
+      $('#kpiReviewCard').onclick = () => {
+        const cb = $('#onlyReview');
+        if (cb) { cb.checked = !cb.checked; refresh(); }
+      };
+    }
+    if ($('#kpiFlagCard')) {
+      $('#kpiFlagCard').onclick = () => {
+        const cb = $('#onlyFlagged');
+        if (cb) { cb.checked = !cb.checked; refresh(); }
+      };
+    }
 
     $('#addManual').onclick = async () => {
       const vendor = prompt('Vendor / Merchant name?'); if (!vendor) return;
