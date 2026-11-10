@@ -338,10 +338,10 @@ const TOOLS = [
       properties: {
         vendor: { type: 'string', description: 'Merchant name as printed on the receipt.' },
         date: { type: 'string', description: 'Purchase date, YYYY-MM-DD. If the year is missing, assume the current year (' + today().slice(0, 4) + ').' },
-        amount: { type: 'number', description: 'Grand total paid, INCLUDING tax and tip.' },
+        amount: { anyOf: [{ type: 'number' }, { type: 'string' }], description: 'Grand total paid, INCLUDING tax and tip.' },
         currency: { type: 'string', description: '3-letter ISO code, e.g. USD, INR, EUR. Default USD.' },
         category: { ...catEnum, description: 'Best-fit category.' },
-        tax: { type: 'number', description: 'Total tax/VAT/GST shown on the receipt. 0 if none shown.' },
+        tax: { anyOf: [{ type: 'number' }, { type: 'string' }], description: 'Total tax/VAT/GST shown on the receipt. 0 if none shown.' },
         payment_method: { type: 'string', description: 'e.g. "Visa 4242", "Cash", "Corporate Card". Optional.' },
         notes: { type: 'string', description: 'Short note, business justification, or line item details. Optional.' },
         image_url: { type: 'string', description: 'Public URL, base64 data URI, or SVG bill markup (data:image/svg+xml;utf8,<svg ...>) of the receipt so it visually pins on the user\'s Notice Board. Optional.' },
@@ -354,7 +354,7 @@ const TOOLS = [
             type: 'object',
             properties: {
               description: { type: 'string' },
-              amount: { type: 'number' }
+              amount: { anyOf: [{ type: 'number' }, { type: 'string' }] }
             }
           }
         },
@@ -374,7 +374,7 @@ const TOOLS = [
         category: catEnum,
         needs_review: { type: 'boolean', description: 'true = only items the user has not confirmed yet.' },
         flagged: { type: 'boolean', description: 'true = only items with policy flags or math discrepancies.' },
-        limit: { type: 'number', description: 'Max rows (default 50, max 500).' },
+        limit: { anyOf: [{ type: 'number' }, { type: 'string' }], description: 'Max rows (default 50, max 500).' },
       },
     },
     annotations: { readOnlyHint: true },
@@ -385,9 +385,9 @@ const TOOLS = [
     inputSchema: {
       type: 'object', required: ['id'],
       properties: {
-        id: { type: 'number', description: 'Expense id from add_expense or list_expenses.' },
-        vendor: { type: 'string' }, date: { type: 'string', description: 'YYYY-MM-DD' }, amount: { type: 'number' },
-        currency: { type: 'string' }, category: catEnum, tax: { type: 'number' },
+        id: { anyOf: [{ type: 'number' }, { type: 'string' }], description: 'Expense id from add_expense or list_expenses.' },
+        vendor: { type: 'string' }, date: { type: 'string', description: 'YYYY-MM-DD' }, amount: { anyOf: [{ type: 'number' }, { type: 'string' }] },
+        currency: { type: 'string' }, category: catEnum, tax: { anyOf: [{ type: 'number' }, { type: 'string' }] },
         payment_method: { type: 'string' }, notes: { type: 'string' },
         image_url: { type: 'string' },
         discrepancy: { type: 'string' }, policy_flag: { type: 'string' },
