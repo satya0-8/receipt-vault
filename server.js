@@ -8,10 +8,12 @@ const crypto = require('crypto');
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'vault.json');
+const UPLOAD_DIR = path.join(DATA_DIR, 'receipts');
 const CATEGORIES = ['Meals', 'Groceries', 'Travel', 'Lodging', 'Transport', 'Software', 'Office Supplies', 'Utilities', 'Entertainment', 'Health', 'Other'];
 
 // ---------- storage (JSON file, atomic writes) ----------
 fs.mkdirSync(DATA_DIR, { recursive: true });
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 let db = { secret: crypto.randomBytes(32).toString('hex'), nextId: 1, users: {}, expenses: [] };
 if (fs.existsSync(DATA_FILE)) db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
 function save() {
@@ -97,7 +99,62 @@ function normalize(input, partial) {
   }
   if (has('payment_method')) out.payment_method = String(input.payment_method).trim().slice(0, 60);
   if (has('notes')) out.notes = String(input.notes).trim().slice(0, 500);
+  if (has('image_url')) out.image_url = String(input.image_url ?? '').trim();
+  else if (!partial) out.image_url = '';
+  if (has('discrepancy')) out.discrepancy = String(input.discrepancy ?? '').trim().slice(0, 300);
+  else if (!partial) out.discrepancy = '';
+  if (has('policy_flag')) out.policy_flag = String(input.policy_flag ?? '').trim().slice(0, 300);
+  else if (!partial) out.policy_flag = '';
+
+  if (has('items')) {
+    if (Array.isArray(input.items)) {
+      out.items = input.items.map(it => ({
+        description: String(it.description || it.name || 'Item').trim().slice(0, 100),
+        amount: round2(Number(it.amount) || 0)
+      }));
+    } else if (typeof input.items === 'string') {
+      try {
+        const parsed = JSON.parse(input.items);
+        if (Array.isArray(parsed)) {
+          out.items = parsed.map(it => ({
+            description: String(it.description || it.name || 'Item').trim().slice(0, 100),
+            amount: round2(Number(it.amount) || 0)
+          }));
+        }
+      } catch {}
+    }
+  } else if (!partial) out.items = [];
+
   if (out.amount !== undefined && out.tax !== undefined && out.tax > out.amount) throw new HttpError(400, 'tax cannot be larger than the total amount.');
+
+  // Auto-detect math discrepancy if items sum doesn't match total
+  if (out.items && out.items.length > 0 && out.amount) {
+    const itemsSum = round2(out.items.reduce((acc, it) => acc + (it.amount || 0), 0));
+    const expectedWithTax = round2(itemsSum + (out.tax || 0));
+    if (Math.abs(expectedWithTax - out.amount) > 0.05 && Math.abs(itemsSum - out.amount) > 0.05 && !out.discrepancy) {
+      out.discrepancy = `Line items sum to ${itemsSum.toFixed(2)}, total is ${out.amount.toFixed(2)}`;
+    }
+  }
+  // Auto-detect discrepancy keywords from notes (e.g. Claude detected math mismatch)
+  if (!out.discrepancy && out.notes) {
+    if (/(discrepancy|doesn't add up|numbers don't add up|mismatch|printed total of \$\d+)/i.test(out.notes)) {
+      out.discrepancy = out.notes.slice(0, 200);
+    }
+  }
+  // Automated corporate policy check heuristics
+  if (!out.policy_flag && out.date) {
+    const d = new Date(out.date + 'T00:00:00Z');
+    const day = d.getUTCDay();
+    if (day === 0 || day === 6) {
+      out.policy_flag = 'Weekend spend (requires business justification)';
+    } else if (out.category === 'Meals' && out.amount > 75) {
+      out.policy_flag = `Meal expense (${out.amount.toFixed(2)}) exceeds standard $75 policy`;
+    } else if (out.category === 'Lodging' && out.amount > 300) {
+      out.policy_flag = `Lodging (${out.amount.toFixed(2)}) exceeds standard $300/night cap`;
+    } else if (out.notes && /alcohol|beer|wine|cocktail/i.test(out.notes)) {
+      out.policy_flag = 'Alcohol itemized on receipt (review personal split)';
+    }
+  }
   return out;
 }
 const mine = uid => db.expenses.filter(e => e.uid === uid);
@@ -108,7 +165,7 @@ function addExpense(uid, input, source, allowDup) {
   const dup = mine(uid).find(e => e.vendor.toLowerCase() === f.vendor.toLowerCase() && e.date === f.date && e.amount === f.amount && e.currency === f.currency);
   if (dup && !allowDup) return { duplicateOf: pub(dup) };
   const now = new Date().toISOString();
-  const e = { id: db.nextId++, uid, payment_method: '', notes: '', ...f, source, reviewed: source !== 'claude', created: now, updated: now };
+  const e = { id: db.nextId++, uid, payment_method: '', notes: '', discrepancy: '', policy_flag: '', items: [], image_url: '', ...f, source, reviewed: source !== 'claude', created: now, updated: now };
   db.expenses.push(e);
   save();
   return { expense: pub(e) };
@@ -131,14 +188,15 @@ function deleteExpense(uid, id) {
   db.expenses.splice(i, 1);
   save();
 }
-function listExpenses(uid, { month, search, category, needs_review, limit } = {}) {
+function listExpenses(uid, { month, search, category, needs_review, flagged, limit } = {}) {
   let rows = mine(uid);
   if (month) rows = rows.filter(e => e.date.startsWith(month));
   if (category) rows = rows.filter(e => e.category.toLowerCase() === String(category).toLowerCase());
   if (needs_review !== undefined && needs_review !== '') rows = rows.filter(e => e.reviewed === !(needs_review === true || needs_review === 'true'));
+  if (flagged === true || flagged === 'true') rows = rows.filter(e => !!(e.discrepancy || e.policy_flag));
   if (search) {
     const q = String(search).toLowerCase();
-    rows = rows.filter(e => [e.vendor, e.notes, e.category, e.payment_method].join(' ').toLowerCase().includes(q));
+    rows = rows.filter(e => [e.vendor, e.notes, e.category, e.payment_method, e.discrepancy, e.policy_flag].join(' ').toLowerCase().includes(q));
   }
   rows = rows.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
   const total = rows.length;
@@ -148,26 +206,61 @@ function listExpenses(uid, { month, search, category, needs_review, limit } = {}
 function summary(uid, month) {
   const rows = mine(uid).filter(e => !month || e.date.startsWith(month));
   const byCur = {};
+  let totalTaxSum = 0;
+  let flaggedCount = 0;
   for (const e of rows) {
     const c = (byCur[e.currency] ||= { currency: e.currency, total: 0, tax: 0, count: 0, byCategory: {} });
     c.total += e.amount; c.tax += e.tax; c.count++;
+    totalTaxSum += e.tax;
+    if (e.discrepancy || e.policy_flag) flaggedCount++;
     c.byCategory[e.category] = (c.byCategory[e.category] || 0) + e.amount;
   }
   const out = Object.values(byCur).map(c => ({
     currency: c.currency, total: round2(c.total), tax: round2(c.tax), net: round2(c.total - c.tax), count: c.count,
     byCategory: Object.entries(c.byCategory).map(([category, amount]) => ({ category, amount: round2(amount) })).sort((a, b) => b.amount - a.amount),
   }));
-  return { month: month || 'all', needsReview: rows.filter(e => !e.reviewed).length, totals: out };
+  return {
+    month: month || 'all',
+    needsReview: rows.filter(e => !e.reviewed).length,
+    flaggedCount,
+    totalTax: round2(totalTaxSum),
+    totalCount: rows.length,
+    totals: out
+  };
 }
 function csvCell(v) {
   let s = String(v ?? '');
   if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // block spreadsheet formula injection
   return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
-function toCsv(rows) {
-  const head = ['Date', 'Vendor', 'Category', 'Currency', 'Total', 'Tax', 'Net', 'Payment method', 'Notes', 'ID'];
-  const lines = [head.join(',')].concat(rows.slice().sort((a, b) => a.date.localeCompare(b.date)).map(e =>
-    [e.date, e.vendor, e.category, e.currency, e.amount.toFixed(2), e.tax.toFixed(2), (e.amount - e.tax).toFixed(2), e.payment_method, e.notes, e.id].map(csvCell).join(',')));
+function toCsv(rows, format = 'standard') {
+  const sorted = rows.slice().sort((a, b) => a.date.localeCompare(b.date));
+  if (format === 'volopay') {
+    const head = ['Transaction Date', 'Transaction ID', 'Merchant', 'Category', 'Total Amount', 'Currency', 'Tax Amount', 'Net Amount', 'Policy Status', 'Compliance Notes', 'Review Status', 'Payment Method'];
+    const lines = [head.join(',')].concat(sorted.map(e => {
+      const policyStatus = (e.discrepancy || e.policy_flag) ? 'FLAGGED' : 'COMPLIANT';
+      const notes = [e.discrepancy, e.policy_flag, e.notes].filter(Boolean).join(' | ');
+      const reviewStatus = e.reviewed ? 'CONFIRMED' : 'NEEDS_REVIEW';
+      return [e.date, `VP-REC-${e.id}`, e.vendor, e.category, e.amount.toFixed(2), e.currency, e.tax.toFixed(2), (e.amount - e.tax).toFixed(2), policyStatus, notes, reviewStatus, e.payment_method || 'Corporate Card'].map(csvCell).join(',');
+    }));
+    return '\uFEFF' + lines.join('\r\n') + '\r\n';
+  }
+  if (format === 'quickbooks') {
+    const head = ['Date', 'Transaction Type', 'Number', 'Name', 'Memo', 'Account', 'Amount', 'Sales Tax'];
+    const lines = [head.join(',')].concat(sorted.map(e =>
+      [e.date, 'Expense', e.id, e.vendor, e.notes || e.discrepancy || '', e.category, e.amount.toFixed(2), e.tax.toFixed(2)].map(csvCell).join(',')));
+    return '\uFEFF' + lines.join('\r\n') + '\r\n';
+  }
+  if (format === 'xero') {
+    const head = ['*ContactName', '*InvoiceNumber', '*InvoiceDate', '*DueDate', 'Total', '*Description', '*Quantity', '*UnitAmount', '*AccountCode', '*TaxType'];
+    const lines = [head.join(',')].concat(sorted.map(e =>
+      [e.vendor, `INV-${e.id}`, e.date, e.date, e.amount.toFixed(2), e.notes || e.category, '1', e.amount.toFixed(2), e.category, e.tax > 0 ? 'Tax on Purchases' : 'Tax Exempt'].map(csvCell).join(',')));
+    return '\uFEFF' + lines.join('\r\n') + '\r\n';
+  }
+  // Standard format
+  const head = ['Date', 'Vendor', 'Category', 'Currency', 'Total', 'Tax', 'Net', 'Payment method', 'Notes', 'Discrepancy', 'Policy Flag', 'Status', 'ID'];
+  const lines = [head.join(',')].concat(sorted.map(e =>
+    [e.date, e.vendor, e.category, e.currency, e.amount.toFixed(2), e.tax.toFixed(2), (e.amount - e.tax).toFixed(2), e.payment_method, e.notes, e.discrepancy || '', e.policy_flag || '', e.reviewed ? 'Confirmed' : 'Needs Review', e.id].map(csvCell).join(',')));
   return '\uFEFF' + lines.join('\r\n') + '\r\n';
 }
 
@@ -177,7 +270,7 @@ const catEnum = { type: 'string', enum: CATEGORIES };
 const TOOLS = [
   {
     name: 'add_expense',
-    description: 'Save one expense from a receipt into the user\'s Receipt Vault ledger. Read the receipt image yourself, then call this once per receipt with the values you read. Rejects likely duplicates (same vendor, date, amount) unless allow_duplicate is true. Saved items are marked "needs review" until the user confirms them in the web app.',
+    description: 'Save one expense from a receipt into the user\'s Receipt Vault ledger. Read the receipt image yourself, then call this once per receipt with the values you read. Rejects likely duplicates unless allow_duplicate is true. You can pass items, math discrepancies (if receipt numbers do not add up), and policy flags.',
     inputSchema: {
       type: 'object', required: ['vendor', 'date', 'amount'],
       properties: {
@@ -187,8 +280,22 @@ const TOOLS = [
         currency: { type: 'string', description: '3-letter ISO code, e.g. USD, INR, EUR. Default USD.' },
         category: { ...catEnum, description: 'Best-fit category.' },
         tax: { type: 'number', description: 'Total tax/VAT/GST shown on the receipt. 0 if none shown.' },
-        payment_method: { type: 'string', description: 'e.g. "Visa 4242", "Cash", "UPI". Optional.' },
-        notes: { type: 'string', description: 'Short note, e.g. what was bought or the business purpose. Optional.' },
+        payment_method: { type: 'string', description: 'e.g. "Visa 4242", "Cash", "Corporate Card". Optional.' },
+        notes: { type: 'string', description: 'Short note, business justification, or line item details. Optional.' },
+        image_url: { type: 'string', description: 'Public URL or base64 data URI of the bill photo / receipt image. Optional.' },
+        discrepancy: { type: 'string', description: 'Describe any math mismatches or printing errors on the receipt (e.g. line items total $42.50 but printed total is $45.00).' },
+        policy_flag: { type: 'string', description: 'Corporate spend policy warning, e.g. "Meals exceed $75" or "Weekend spend".' },
+        items: {
+          type: 'array',
+          description: 'Itemized list of purchases from the receipt.',
+          items: {
+            type: 'object',
+            properties: {
+              description: { type: 'string' },
+              amount: { type: 'number' }
+            }
+          }
+        },
         allow_duplicate: { type: 'boolean', description: 'Set true only if the user confirmed this is a separate, identical purchase.' },
       },
     },
@@ -196,14 +303,15 @@ const TOOLS = [
   },
   {
     name: 'list_expenses',
-    description: 'Search and list saved expenses, newest first. Use it to answer questions about past spending or to find an expense id before updating it.',
+    description: 'Search and list saved expenses, newest first. Use it to answer questions about past spending, audit issues, or to find an expense id before updating it.',
     inputSchema: {
       type: 'object',
       properties: {
         month: { type: 'string', description: 'YYYY-MM, e.g. 2026-11.' },
-        search: { type: 'string', description: 'Matches vendor, notes, category, payment method.' },
+        search: { type: 'string', description: 'Matches vendor, notes, category, payment method, discrepancy, policy flags.' },
         category: catEnum,
         needs_review: { type: 'boolean', description: 'true = only items the user has not confirmed yet.' },
+        flagged: { type: 'boolean', description: 'true = only items with policy flags or math discrepancies.' },
         limit: { type: 'number', description: 'Max rows (default 50, max 500).' },
       },
     },
@@ -219,18 +327,54 @@ const TOOLS = [
         vendor: { type: 'string' }, date: { type: 'string', description: 'YYYY-MM-DD' }, amount: { type: 'number' },
         currency: { type: 'string' }, category: catEnum, tax: { type: 'number' },
         payment_method: { type: 'string' }, notes: { type: 'string' },
+        image_url: { type: 'string' },
+        discrepancy: { type: 'string' }, policy_flag: { type: 'string' },
       },
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
   },
   {
     name: 'monthly_summary',
-    description: 'Totals for a month (or all time if month is omitted): spend, tax, net and count per currency, with a category breakdown. Also reports how many items still need review.',
+    description: 'Totals for a month (or all time if month is omitted): spend, tax, net and count per currency, with a category breakdown. Also reports how many items still need review and how many are flagged.',
     inputSchema: { type: 'object', properties: { month: { type: 'string', description: 'YYYY-MM. Defaults to the current month (' + today().slice(0, 7) + ').' } } },
     annotations: { readOnlyHint: true },
   },
+  {
+    name: 'spending_insights',
+    description: 'Deep financial audit & executive analytics for spend trends, tax deductions, top merchants, and policy compliance violations. Call this to answer business questions about corporate spending habits or audit findings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        month: { type: 'string', description: 'YYYY-MM. Defaults to all time if omitted.' },
+        category: catEnum,
+      },
+    },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: 'check_policy',
+    description: 'Pre-check an expense or receipt details against company expense policies (meals limit $75, lodging limit $300, weekend policy, alcohol, tax compliance). Returns compliance verdict and recommendations.',
+    inputSchema: {
+      type: 'object',
+      required: ['vendor', 'amount'],
+      properties: {
+        vendor: { type: 'string' },
+        amount: { type: 'number' },
+        category: catEnum,
+        date: { type: 'string', description: 'YYYY-MM-DD' },
+        tax: { type: 'number' },
+        notes: { type: 'string' },
+      },
+    },
+    annotations: { readOnlyHint: true },
+  },
 ];
-const fmt = (e) => `#${e.id} ${e.date} ${e.vendor} | ${e.category} | ${e.currency} ${e.amount.toFixed(2)} (tax ${e.tax.toFixed(2)})${e.reviewed ? '' : ' [needs review]'}`;
+const fmt = (e) => {
+  let s = `#${e.id} ${e.date} ${e.vendor} | ${e.category} | ${e.currency} ${e.amount.toFixed(2)} (tax ${e.tax.toFixed(2)})${e.reviewed ? '' : ' [needs review]'}`;
+  if (e.discrepancy) s += ` [⚠️ Discrepancy: ${e.discrepancy}]`;
+  if (e.policy_flag) s += ` [⚠️ Policy: ${e.policy_flag}]`;
+  return s;
+};
 
 function callTool(user, name, a = {}) {
   switch (name) {
@@ -253,9 +397,58 @@ function callTool(user, name, a = {}) {
       if (!/^\d{4}-\d{2}$/.test(month)) throw new HttpError(400, 'month must be YYYY-MM.');
       const s = summary(user.id, month);
       if (!s.totals.length) return `No expenses recorded for ${month}.`;
-      return `Summary for ${month} (${s.needsReview} item(s) still need review):\n` + s.totals.map(t =>
+      return `Summary for ${month} (${s.needsReview} item(s) need review, ${s.flaggedCount} flagged for policy/discrepancies):\n` + s.totals.map(t =>
         `${t.currency}: total ${t.total.toFixed(2)}, tax ${t.tax.toFixed(2)}, net ${t.net.toFixed(2)}, ${t.count} receipts\n` +
         t.byCategory.map(c => `  - ${c.category}: ${c.amount.toFixed(2)}`).join('\n')).join('\n');
+    }
+    case 'spending_insights': {
+      const month = a.month || '';
+      const list = listExpenses(user.id, { month, category: a.category }).rows;
+      if (!list.length) return `No expenses found to analyze${month ? ` for ${month}` : ''}.`;
+      const totalSpend = list.reduce((s, e) => s + e.amount, 0);
+      const totalTax = list.reduce((s, e) => s + e.tax, 0);
+      const avgExpense = totalSpend / list.length;
+      const flagged = list.filter(e => e.discrepancy || e.policy_flag);
+      const unreviewed = list.filter(e => !e.reviewed);
+
+      const vendorSpend = {};
+      const catSpend = {};
+      list.forEach(e => {
+        vendorSpend[e.vendor] = (vendorSpend[e.vendor] || 0) + e.amount;
+        catSpend[e.category] = (catSpend[e.category] || 0) + e.amount;
+      });
+      const topVendors = Object.entries(vendorSpend).sort((a,b) => b[1] - a[1]).slice(0, 3);
+      const topCats = Object.entries(catSpend).sort((a,b) => b[1] - a[1]);
+
+      let out = `📊 Financial & Policy Audit Insights ${month ? `(${month})` : '(All Time)'}:\n`;
+      out += `• Total Spend: $${totalSpend.toFixed(2)} across ${list.length} receipts\n`;
+      out += `• Average Receipt: $${avgExpense.toFixed(2)}\n`;
+      out += `• Tax Tracked (Deductible): $${totalTax.toFixed(2)}\n`;
+      out += `• Needs Review: ${unreviewed.length} receipt(s)\n`;
+      out += `• Discrepancies & Policy Flags: ${flagged.length} item(s)\n\n`;
+
+      out += `Top Vendors:\n` + topVendors.map(([v, amt]) => `  - ${v}: $${amt.toFixed(2)}`).join('\n') + '\n\n';
+      out += `Category Breakdown:\n` + topCats.map(([c, amt]) => `  - ${c}: $${amt.toFixed(2)} (${Math.round(amt / (totalSpend || 1) * 100)}%)`).join('\n');
+
+      if (flagged.length) {
+        out += `\n\n⚠️ Policy / Discrepancy Alerts:\n` + flagged.map(f => `  - #${f.id} ${f.vendor} ($${f.amount.toFixed(2)}): ${f.discrepancy || f.policy_flag}`).join('\n');
+      }
+      return out;
+    }
+    case 'check_policy': {
+      const violations = [];
+      const d = a.date ? new Date(a.date + 'T00:00:00Z') : new Date();
+      const day = d.getUTCDay();
+      if (day === 0 || day === 6) violations.push('Weekend transaction: Requires business purpose justification');
+      if (a.category === 'Meals' && a.amount > 75) violations.push(`Meal total ($${a.amount}) exceeds standard $75 corporate limit`);
+      if (a.category === 'Lodging' && a.amount > 300) violations.push(`Lodging ($${a.amount}) exceeds standard $300/night cap`);
+      if (a.notes && /alcohol|beer|wine|cocktail/i.test(a.notes)) violations.push('Alcohol detected: Personal payment or executive approval required');
+      if (!a.tax || a.tax === 0) violations.push('Missing tax info: Verify VAT/GST on receipt for deductible claim');
+
+      if (!violations.length) {
+        return `✅ Policy Compliant: Expense of $${Number(a.amount).toFixed(2)} at ${a.vendor} passes all corporate spend policies.`;
+      }
+      return `⚠️ Policy Warnings for ${a.vendor} ($${Number(a.amount).toFixed(2)}):\n` + violations.map(v => `• ${v}`).join('\n') + `\nRecommendation: Flag item for manager review upon submission.`;
     }
     default: throw new HttpError(404, `Unknown tool: ${name}`);
   }
@@ -293,7 +486,7 @@ function rpc(user, msg) {
 }
 
 // ---------- HTTP ----------
-function readBody(req, limit = 200_000) {
+function readBody(req, limit = 15_000_000) {
   return new Promise((resolve, reject) => {
     let size = 0; const chunks = [];
     req.on('data', c => { size += c.length; if (size > limit) { reject(new HttpError(413, 'Body too large.')); req.destroy(); } else chunks.push(c); });
@@ -371,11 +564,35 @@ const server = http.createServer(async (req, res) => {
       if (em && req.method === 'PATCH') return send(res, 200, updateExpense(user.id, em[1], await json()));
       if (em && req.method === 'DELETE') { deleteExpense(user.id, em[1]); return send(res, 200, { ok: true }); }
       if (p === '/api/summary') return send(res, 200, summary(user.id, url.searchParams.get('month') || ''));
+      if (p === '/api/upload' && req.method === 'POST') {
+        const b = await json();
+        if (!b.data || !b.data.startsWith('data:image/')) throw new HttpError(400, 'Invalid image data');
+        const m = /^data:image\/(\w+);base64,(.+)$/.exec(b.data);
+        if (!m) throw new HttpError(400, 'Invalid base64 image');
+        const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+        const filename = `${crypto.randomUUID()}.${ext}`;
+        fs.writeFileSync(path.join(UPLOAD_DIR, filename), Buffer.from(m[2], 'base64'));
+        return send(res, 200, { url: `/receipts/${filename}` });
+      }
       if (p === '/api/export.csv') {
-        const rows = listExpenses(user.id, { month: url.searchParams.get('month') || '' }).rows;
-        return send(res, 200, toCsv(rows), { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="receipt-vault-${url.searchParams.get('month') || 'all'}.csv"` });
+        const format = url.searchParams.get('format') || 'standard';
+        const month = url.searchParams.get('month') || '';
+        const rows = listExpenses(user.id, { month }).rows;
+        return send(res, 200, toCsv(rows, format), { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="receipt-vault-${format}-${month || 'all'}.csv"` });
       }
       throw new HttpError(404, 'Not found.');
+    }
+
+    if (p.startsWith('/receipts/')) {
+      const filename = path.basename(p);
+      const filePath = path.join(UPLOAD_DIR, filename);
+      if (fs.existsSync(filePath)) {
+        const ext = path.extname(filename).toLowerCase();
+        const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : 'image/jpeg';
+        res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'public, max-age=86400' });
+        return fs.createReadStream(filePath).pipe(res);
+      }
+      return send(res, 404, 'Image not found');
     }
 
     if (p === '/healthz') return send(res, 200, 'ok');

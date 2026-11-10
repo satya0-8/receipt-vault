@@ -25,7 +25,7 @@ server.listen(0, async () => {
     assert.equal(init.result.serverInfo.name, 'receipt-vault');
     assert.equal((await call('POST', mcp, { jsonrpc: '2.0', method: 'notifications/initialized' })).status, 202);
     const tools = (await rpc(2, 'tools/list')).body.result.tools.map(t => t.name);
-    assert.deepEqual(tools, ['add_expense', 'list_expenses', 'update_expense', 'monthly_summary']);
+    assert.deepEqual(tools, ['add_expense', 'list_expenses', 'update_expense', 'monthly_summary', 'spending_insights', 'check_policy']);
     assert.equal((await call('POST', '/mcp/wrongtoken', { jsonrpc: '2.0', id: 1, method: 'ping' })).status, 401);
 
     // add via Claude
@@ -58,10 +58,18 @@ server.listen(0, async () => {
     r = await tool('monthly_summary', { month: '2026-11' });
     assert.ok(/38\.20/.test(r.content[0].text), r.content[0].text);
 
-    // CSV, with formula-injection guard
+    // Test spending_insights and check_policy
+    const insights = await tool('spending_insights', { month: '2026-11' });
+    assert.ok(insights.content[0].text.includes('Financial & Policy Audit Insights'), insights.content[0].text);
+    const policy = await tool('check_policy', { vendor: 'Fancy Steakhouse', amount: 150, category: 'Meals' });
+    assert.ok(policy.content[0].text.includes('Policy Warnings'), policy.content[0].text);
+
+    // CSV, with formula-injection guard and Volopay format
     await tool('add_expense', { vendor: '=HYPERLINK("evil")', date: '2026-11-10', amount: 1 });
     const csv = (await call('GET', '/api/export.csv?month=2026-11')).body;
     assert.ok(csv.startsWith('Date,Vendor') && csv.includes(`"'=HYPERLINK(""evil"")"`), csv);
+    const vpCsv = (await call('GET', '/api/export.csv?format=volopay&month=2026-11')).body;
+    assert.ok(vpCsv.startsWith('Transaction Date,Transaction ID'), vpCsv);
 
     // isolation between users
     const first = cookie; cookie = '';
