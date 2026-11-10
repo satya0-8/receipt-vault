@@ -31,40 +31,14 @@
       --success-bg: #f0fdf4;
       --success-border: #bbf7d0;
       --success-ink: #166534;
-      --board-bg: #f4ede4;
-      --board-grid: rgba(180, 160, 140, 0.2);
+      --board-bg: #f8fafc;
+      --board-grid: rgba(148, 163, 184, 0.25);
       --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-      --shadow-pin: 0 10px 25px -4px rgba(0, 0, 0, 0.14), 0 4px 6px -2px rgba(0, 0, 0, 0.06);
+      --shadow-pin: 0 10px 25px -4px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
       --radius-sm: 6px;
       --radius-md: 10px;
       --radius-lg: 14px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #090d16;
-        --surface: #111827;
-        --surface-subtle: #1f2937;
-        --border: #374151;
-        --border-focus: #2dd4bf;
-        --text: #f9fafb;
-        --text-muted: #9ca3af;
-        --accent: #14b8a6;
-        --accent-light: #134e4a;
-        --accent-ink: #042f2e;
-        --warn-bg: #451a03;
-        --warn-border: #78350f;
-        --warn-ink: #fde68a;
-        --danger-bg: #4c0519;
-        --danger-border: #881337;
-        --danger-ink: #fecdd3;
-        --success-bg: #052e16;
-        --success-border: #14532d;
-        --success-ink: #bbf7d0;
-        --board-bg: #1c1917;
-        --board-grid: rgba(255, 255, 255, 0.05);
-      }
     }
 
     * {
@@ -1032,45 +1006,34 @@
 
     /* macOS Desktop Folder Stack */
     .mac-stack-folder {
-      width: 210px;
+      width: 220px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
       position: relative;
-      padding: 18px 14px;
-      background: rgba(255, 255, 255, 0.45);
-      backdrop-filter: blur(10px);
-      border: 1px dashed rgba(120, 100, 80, 0.35);
-      border-radius: var(--radius-md);
-      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      padding: 22px 16px 18px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       user-select: none;
     }
 
     .mac-stack-folder:hover {
-      background: rgba(255, 255, 255, 0.7);
-      transform: translateY(-6px) scale(1.02);
-      box-shadow: 0 16px 30px -4px rgba(0, 0, 0, 0.15);
+      background: #ffffff;
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
       border-color: var(--accent);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .mac-stack-folder {
-        background: rgba(30, 41, 59, 0.45);
-        border-color: rgba(255, 255, 255, 0.15);
-      }
-
-      .mac-stack-folder:hover {
-        background: rgba(30, 41, 59, 0.75);
-      }
     }
 
     .mac-stack-visual {
       position: relative;
-      width: 130px;
-      height: 140px;
-      margin-bottom: 14px;
+      width: 140px;
+      height: 145px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1078,30 +1041,34 @@
 
     .mac-stack-layer {
       position: absolute;
-      width: 105px;
-      height: 125px;
+      width: 110px;
+      height: 130px;
       background: #ffffff;
-      border-radius: 6px;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
     }
 
     .mac-stack-layer.layer-3 {
-      transform: rotate(-6deg) translate(-5px, -4px);
+      transform: rotate(-3deg) translate(-4px, -2px);
       background: #f1f5f9;
+      border-color: #e2e8f0;
       z-index: 1;
     }
 
     .mac-stack-layer.layer-2 {
-      transform: rotate(5deg) translate(5px, -2px);
+      transform: rotate(3deg) translate(4px, -1px);
       background: #f8fafc;
+      border-color: #cbd5e1;
       z-index: 2;
     }
 
     .mac-stack-layer.layer-1 {
       transform: rotate(0deg);
       background: #ffffff;
+      border-color: #cbd5e1;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
       z-index: 3;
       overflow: hidden;
       display: flex;
@@ -1110,31 +1077,19 @@
       justify-content: center;
     }
 
-    @media (prefers-color-scheme: dark) {
-      .mac-stack-layer.layer-3 {
-        background: #1e293b;
-      }
-
-      .mac-stack-layer.layer-2 {
-        background: #334155;
-      }
-
-      .mac-stack-layer.layer-1 {
-        background: #0f172a;
-        border-color: #475569;
-      }
-    }
-
     .mac-stack-folder:hover .mac-stack-layer.layer-3 {
-      transform: rotate(-14deg) translate(-12px, -8px);
+      transform: rotate(-7deg) translate(-7px, -4px);
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.09);
     }
 
     .mac-stack-folder:hover .mac-stack-layer.layer-2 {
-      transform: rotate(12deg) translate(12px, -6px);
+      transform: rotate(6deg) translate(7px, -3px);
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.09);
     }
 
     .mac-stack-folder:hover .mac-stack-layer.layer-1 {
-      transform: rotate(0deg) translateY(-3px);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
     }
 
     .mac-stack-thumb {
@@ -1144,31 +1099,31 @@
     }
 
     .mac-stack-slip {
-      padding: 10px 8px;
-      font-size: 10px;
-      color: #334155;
+      padding: 12px 10px;
+      font-size: 11px;
+      color: #0f172a;
       text-align: center;
-      line-height: 1.3;
+      line-height: 1.4;
       width: 100%;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .mac-stack-slip {
-        color: #cbd5e1;
-      }
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      background: #ffffff;
     }
 
     .mac-stack-badge {
       position: absolute;
-      top: -4px;
-      right: 4px;
+      top: 0px;
+      right: 6px;
       background: var(--accent);
       color: #ffffff;
       font-size: 11px;
-      font-weight: 800;
-      padding: 2px 8px;
+      font-weight: 700;
+      padding: 2px 7px;
       border-radius: 9999px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 2px 5px rgba(15, 118, 110, 0.25);
       z-index: 10;
       border: 2px solid #ffffff;
     }
@@ -1178,62 +1133,58 @@
       flex-direction: column;
       align-items: center;
       gap: 3px;
+      width: 100%;
     }
 
     .mac-stack-title {
-      font-weight: 800;
+      font-weight: 700;
       font-size: 14px;
       letter-spacing: -0.01em;
-      color: var(--text);
+      color: #0f172a;
       display: flex;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
     }
 
     .mac-stack-total {
       font-family: 'JetBrains Mono', monospace;
       font-size: 13px;
-      font-weight: 800;
+      font-weight: 700;
       color: var(--accent);
       margin-top: 2px;
     }
 
     .mac-stack-hint {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+      color: #64748b;
       margin-top: 6px;
-      background: rgba(0, 0, 0, 0.06);
-      padding: 2px 8px;
+      padding: 3px 10px;
       border-radius: 9999px;
+      background: #f1f5f9;
+      transition: all 0.15s ease;
     }
 
-    @media (prefers-color-scheme: dark) {
-      .mac-stack-hint {
-        background: rgba(255, 255, 255, 0.1);
-      }
+    .mac-stack-folder:hover .mac-stack-hint {
+      background: var(--accent-light);
+      color: var(--accent);
     }
 
     /* Expanded Month Column */
     .board-month-column {
       flex: 0 0 360px;
-      background: rgba(255, 255, 255, 0.45);
-      backdrop-filter: blur(8px);
-      border: 1px dashed rgba(120, 100, 80, 0.35);
-      border-radius: var(--radius-md);
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       padding: 18px;
       min-height: 500px;
       display: flex;
       flex-direction: column;
       gap: 18px;
       position: relative;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .board-month-column {
-        background: rgba(30, 41, 59, 0.45);
-        border-color: rgba(255, 255, 255, 0.15);
-      }
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     }
 
     .month-col-head {
@@ -2515,8 +2466,7 @@
         // 📁 1. FOLDER STACK (macOS Desktop Stacks behavior)
         if (!expandedMonths.has(monthKey)) {
           const stackFolder = el('div', {
-            className: 'mac-stack-folder',
-            title: `Click to open ${monthTitle} stack (${monthExpenses.length} bills)`
+            className: 'mac-stack-folder'
           });
           stackFolder.onclick = () => {
             expandedMonths.add(monthKey);
@@ -2536,19 +2486,20 @@
             layer1.append(el('img', { src: topExp.image_url, className: 'mac-stack-thumb', alt: topExp.vendor }));
           } else if (topExp) {
             layer1.append(el('div', { className: 'mac-stack-slip' },
-              el('div', { style: 'font-weight:800;font-size:11px;' }, topExp.vendor.toUpperCase()),
-              el('div', { style: 'font-weight:800;color:var(--accent);margin-top:2px;' }, money(topExp.amount, monthCur)),
-              el('div', { style: 'font-size:9px;color:var(--text-muted);margin-top:2px;' }, topExp.category)
+              el('div', { style: 'font-weight:700;font-size:12px;color:#0f172a;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' }, topExp.vendor),
+              el('div', { style: 'font-family:\'JetBrains Mono\',monospace;font-weight:700;color:var(--accent);font-size:13px;margin-top:3px;' }, money(topExp.amount, monthCur)),
+              el('div', { style: 'font-size:10px;color:#64748b;margin-top:2px;' }, topExp.category)
             ));
           }
 
           const badge = el('span', { className: 'mac-stack-badge' }, `${monthExpenses.length}`);
           visual.append(layer3, layer2, layer1, badge);
 
+          const countLabel = `${monthExpenses.length} bill${monthExpenses.length === 1 ? '' : 's'}`;
           const info = el('div', { className: 'mac-stack-info' },
             el('span', { className: 'mac-stack-title' }, `📁 ${monthTitle}`),
             el('span', { className: 'mac-stack-total' }, money(monthTotal, monthCur)),
-            el('span', { className: 'mac-stack-hint' }, 'Click stack to open')
+            el('span', { className: 'mac-stack-hint' }, `${countLabel} • Click to open`)
           );
 
           stackFolder.append(visual, info);
