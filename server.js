@@ -58,11 +58,38 @@ function userFromToken(token) {
 class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 const round2 = n => Math.round(n * 100) / 100;
 
-function validDate(s) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  const d = new Date(s + 'T00:00:00Z');
-  return !isNaN(d) && d.toISOString().slice(0, 10) === s;
+function parseDateString(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  // Standard ISO YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const d = new Date(s + 'T00:00:00Z');
+    if (!isNaN(d) && d.toISOString().slice(0, 10) === s) return s;
+    return null;
+  }
+  // DD/MM/YYYY or DD-MM-YYYY (e.g. 24/09/2018 or 24-09-2018)
+  const dmy = /^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/.exec(s);
+  if (dmy) {
+    let p1 = dmy[1].padStart(2, '0');
+    let p2 = dmy[2].padStart(2, '0');
+    let year = dmy[3];
+    let day = p1, month = p2;
+    if (Number(p2) > 12 && Number(p1) <= 12) {
+      day = p2; month = p1; // US MM/DD/YYYY
+    }
+    const iso = `${year}-${month}-${day}`;
+    const d = new Date(iso + 'T00:00:00Z');
+    if (!isNaN(d) && d.toISOString().slice(0, 10) === iso) return iso;
+    return null;
+  }
+  // Fallback to Date parser
+  try {
+    const d = new Date(s);
+    if (!isNaN(d) && typeof d.getTime === 'function' && !isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  } catch { }
+  return null;
 }
+
 function normalize(input, partial) {
   const out = {};
   const has = k => input[k] !== undefined && input[k] !== null;
@@ -72,30 +99,37 @@ function normalize(input, partial) {
     out.vendor = v.slice(0, 120);
   }
   if (has('date') || !partial) {
-    const d = String(input.date ?? '').trim();
-    if (!validDate(d)) throw new HttpError(400, 'date must be a real date in YYYY-MM-DD format.');
-    out.date = d;
+    const raw = String(input.date ?? '').trim();
+    const parsed = parseDateString(raw);
+    if (!parsed) throw new HttpError(400, 'date must be a real date in YYYY-MM-DD format.');
+    out.date = parsed;
   }
   if (has('amount') || !partial) {
-    const a = Number(input.amount);
+    const cleanAmt = typeof input.amount === 'string' ? input.amount.replace(/[^0-9.-]+/g, '') : input.amount;
+    const a = Number(cleanAmt);
     if (!Number.isFinite(a) || a < 0) throw new HttpError(400, 'amount must be a non-negative number (the total paid, including tax).');
     out.amount = round2(a);
   }
   if (has('tax')) {
-    const t = Number(input.tax);
-    if (!Number.isFinite(t) || t < 0) throw new HttpError(400, 'tax must be a non-negative number.');
-    out.tax = round2(t);
+    const cleanTax = typeof input.tax === 'string' ? input.tax.replace(/[^0-9.-]+/g, '') : input.tax;
+    const t = Number(cleanTax);
+    if (!Number.isFinite(t) || t < 0) out.tax = 0;
+    else out.tax = round2(t);
   } else if (!partial) out.tax = 0;
   if (has('currency') || !partial) {
-    const c = String(input.currency ?? 'USD').trim().toUpperCase();
-    if (!/^[A-Z]{3}$/.test(c)) throw new HttpError(400, 'currency must be a 3-letter ISO code such as USD, INR, EUR.');
+    let c = String(input.currency ?? 'USD').trim().toUpperCase();
+    if (c === '$' || c === 'US$' || c === 'USD$') c = 'USD';
+    else if (c === '£' || c === 'POUND' || c === 'POUNDS') c = 'GBP';
+    else if (c === '€' || c === 'EURO' || c === 'EUROS') c = 'EUR';
+    else if (c === '₹' || c === 'RUPEE' || c === 'RUPEES') c = 'INR';
+    else if (c === '¥' || c === 'YEN') c = 'JPY';
+    if (!/^[A-Z]{3}$/.test(c)) c = 'USD';
     out.currency = c;
   }
   if (has('category') || !partial) {
-    const raw = String(input.category ?? 'Other').trim();
-    const match = CATEGORIES.find(c => c.toLowerCase() === raw.toLowerCase());
-    if (!match) throw new HttpError(400, `category must be one of: ${CATEGORIES.join(', ')}.`);
-    out.category = match;
+    const raw = String(input.category ?? 'Other').trim().toLowerCase();
+    const match = CATEGORIES.find(c => c.toLowerCase() === raw);
+    out.category = match || 'Other';
   }
   if (has('payment_method')) out.payment_method = String(input.payment_method).trim().slice(0, 60);
   if (has('notes')) out.notes = String(input.notes).trim().slice(0, 500);
@@ -190,17 +224,24 @@ function deleteExpense(uid, id) {
 }
 function listExpenses(uid, { month, start_date, end_date, search, category, needs_review, flagged, limit } = {}) {
   let rows = mine(uid);
-  if (month) rows = rows.filter(e => e.date.startsWith(month));
-  if (start_date) rows = rows.filter(e => e.date >= start_date);
-  if (end_date) rows = rows.filter(e => e.date <= end_date);
-  if (category) rows = rows.filter(e => e.category.toLowerCase() === String(category).toLowerCase());
+  if (month && month !== 'all' && month.toLowerCase() !== 'all time') {
+    const cleanMonth = String(month).slice(0, 7);
+    rows = rows.filter(e => String(e.date || '').startsWith(cleanMonth));
+  }
+  if (start_date) rows = rows.filter(e => String(e.date || '') >= start_date);
+  if (end_date) rows = rows.filter(e => String(e.date || '') <= end_date);
+  if (category) rows = rows.filter(e => String(e.category || '').toLowerCase() === String(category).toLowerCase());
   if (needs_review !== undefined && needs_review !== '') rows = rows.filter(e => e.reviewed === !(needs_review === true || needs_review === 'true'));
   if (flagged === true || flagged === 'true') rows = rows.filter(e => !!(e.discrepancy || e.policy_flag));
   if (search) {
     const q = String(search).toLowerCase();
-    rows = rows.filter(e => [e.vendor, e.notes, e.category, e.payment_method, e.discrepancy, e.policy_flag].join(' ').toLowerCase().includes(q));
+    rows = rows.filter(e => [e.vendor, e.notes, e.category, e.payment_method, e.discrepancy, e.policy_flag]
+      .map(x => String(x || ''))
+      .join(' ')
+      .toLowerCase()
+      .includes(q));
   }
-  rows = rows.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  rows = rows.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || (b.id || 0) - (a.id || 0));
   const total = rows.length;
   if (limit) rows = rows.slice(0, Math.min(Number(limit) || 50, 500));
   return { total, rows: rows.map(pub) };
@@ -210,21 +251,34 @@ function summary(uid, filter = {}) {
   const start_date = typeof filter === 'object' ? (filter.start_date || '') : '';
   const end_date = typeof filter === 'object' ? (filter.end_date || '') : '';
   let rows = mine(uid);
-  if (month) rows = rows.filter(e => e.date.startsWith(month));
-  if (start_date) rows = rows.filter(e => e.date >= start_date);
-  if (end_date) rows = rows.filter(e => e.date <= end_date);
+  if (month && month !== 'all' && month.toLowerCase() !== 'all time') {
+    const cleanMonth = String(month).slice(0, 7);
+    rows = rows.filter(e => String(e.date || '').startsWith(cleanMonth));
+  }
+  if (start_date) rows = rows.filter(e => String(e.date || '') >= start_date);
+  if (end_date) rows = rows.filter(e => String(e.date || '') <= end_date);
   const byCur = {};
   let totalTaxSum = 0;
   let flaggedCount = 0;
   for (const e of rows) {
-    const c = (byCur[e.currency] ||= { currency: e.currency, total: 0, tax: 0, count: 0, byCategory: {} });
-    c.total += e.amount; c.tax += e.tax; c.count++;
-    totalTaxSum += e.tax;
+    const cur = String(e.currency || 'USD').toUpperCase();
+    const amt = Number(e.amount) || 0;
+    const tax = Number(e.tax) || 0;
+    const cat = String(e.category || 'Other');
+    const c = (byCur[cur] ||= { currency: cur, total: 0, tax: 0, count: 0, byCategory: {} });
+    c.total += amt;
+    c.tax += tax;
+    c.count++;
+    totalTaxSum += tax;
     if (e.discrepancy || e.policy_flag) flaggedCount++;
-    c.byCategory[e.category] = (c.byCategory[e.category] || 0) + e.amount;
+    c.byCategory[cat] = (c.byCategory[cat] || 0) + amt;
   }
   const out = Object.values(byCur).map(c => ({
-    currency: c.currency, total: round2(c.total), tax: round2(c.tax), net: round2(c.total - c.tax), count: c.count,
+    currency: c.currency,
+    total: round2(c.total),
+    tax: round2(c.tax),
+    net: round2(Math.max(0, c.total - c.tax)),
+    count: c.count,
     byCategory: Object.entries(c.byCategory).map(([category, amount]) => ({ category, amount: round2(amount) })).sort((a, b) => b.amount - a.amount),
   }));
   return {
@@ -434,7 +488,9 @@ const TOOLS = [
   },
 ];
 const fmt = (e) => {
-  let s = `#${e.id} ${e.date} ${e.vendor} | ${e.category} | ${e.currency} ${e.amount.toFixed(2)} (tax ${e.tax.toFixed(2)})${e.reviewed ? '' : ' [needs review]'}`;
+  const amt = (Number(e.amount) || 0).toFixed(2);
+  const tax = (Number(e.tax) || 0).toFixed(2);
+  let s = `#${e.id} ${e.date || ''} ${e.vendor || 'Unknown'} | ${e.category || 'Other'} | ${e.currency || 'USD'} ${amt} (tax ${tax})${e.reviewed ? '' : ' [needs review]'}`;
   if (e.discrepancy) s += ` [⚠️ Discrepancy: ${e.discrepancy}]`;
   if (e.policy_flag) s += ` [⚠️ Policy: ${e.policy_flag}]`;
   return s;
@@ -457,20 +513,26 @@ function callTool(user, name, a = {}) {
       return `Updated ${fmt(updateExpense(user.id, id, rest))}`;
     }
     case 'monthly_summary': {
-      const month = a.month || today().slice(0, 7);
-      if (!/^\d{4}-\d{2}$/.test(month)) throw new HttpError(400, 'month must be YYYY-MM.');
+      let month = a.month ? String(a.month).trim() : '';
+      if (!month || month === 'all' || month.toLowerCase() === 'all time') {
+        month = '';
+      } else if (!/^\d{4}-\d{2}$/.test(month)) {
+        const m = /^(\d{4})[-\/](\d{2})/.exec(month);
+        if (m) month = `${m[1]}-${m[2]}`;
+      }
       const s = summary(user.id, month);
-      if (!s.totals.length) return `No expenses recorded for ${month}.`;
-      return `Summary for ${month} (${s.needsReview} item(s) need review, ${s.flaggedCount} flagged for policy/discrepancies):\n` + s.totals.map(t =>
-        `${t.currency}: total ${t.total.toFixed(2)}, tax ${t.tax.toFixed(2)}, net ${t.net.toFixed(2)}, ${t.count} receipts\n` +
-        t.byCategory.map(c => `  - ${c.category}: ${c.amount.toFixed(2)}`).join('\n')).join('\n');
+      const label = month || 'All Time';
+      if (!s.totals.length) return `No expenses recorded for ${label}.`;
+      return `Summary for ${label} (${s.needsReview} item(s) need review, ${s.flaggedCount} flagged for policy/discrepancies):\n` + s.totals.map(t =>
+        `${t.currency}: total ${(Number(t.total) || 0).toFixed(2)}, tax ${(Number(t.tax) || 0).toFixed(2)}, net ${(Number(t.net) || 0).toFixed(2)}, ${t.count} receipts\n` +
+        t.byCategory.map(c => `  - ${c.category}: ${(Number(c.amount) || 0).toFixed(2)}`).join('\n')).join('\n');
     }
     case 'spending_insights': {
       const month = a.month || '';
       const list = listExpenses(user.id, { month, category: a.category }).rows;
       if (!list.length) return `No expenses found to analyze${month ? ` for ${month}` : ''}.`;
-      const totalSpend = list.reduce((s, e) => s + e.amount, 0);
-      const totalTax = list.reduce((s, e) => s + e.tax, 0);
+      const totalSpend = list.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      const totalTax = list.reduce((s, e) => s + (Number(e.tax) || 0), 0);
       const avgExpense = totalSpend / list.length;
       const flagged = list.filter(e => e.discrepancy || e.policy_flag);
       const unreviewed = list.filter(e => !e.reviewed);
@@ -478,8 +540,11 @@ function callTool(user, name, a = {}) {
       const vendorSpend = {};
       const catSpend = {};
       list.forEach(e => {
-        vendorSpend[e.vendor] = (vendorSpend[e.vendor] || 0) + e.amount;
-        catSpend[e.category] = (catSpend[e.category] || 0) + e.amount;
+        const v = e.vendor || 'Unknown';
+        const c = e.category || 'Other';
+        const amt = Number(e.amount) || 0;
+        vendorSpend[v] = (vendorSpend[v] || 0) + amt;
+        catSpend[c] = (catSpend[c] || 0) + amt;
       });
       const topVendors = Object.entries(vendorSpend).sort((a, b) => b[1] - a[1]).slice(0, 3);
       const topCats = Object.entries(catSpend).sort((a, b) => b[1] - a[1]);
@@ -495,24 +560,27 @@ function callTool(user, name, a = {}) {
       out += `Category Breakdown:\n` + topCats.map(([c, amt]) => `  - ${c}: $${amt.toFixed(2)} (${Math.round(amt / (totalSpend || 1) * 100)}%)`).join('\n');
 
       if (flagged.length) {
-        out += `\n\n⚠️ Policy / Discrepancy Alerts:\n` + flagged.map(f => `  - #${f.id} ${f.vendor} ($${f.amount.toFixed(2)}): ${f.discrepancy || f.policy_flag}`).join('\n');
+        out += `\n\n⚠️ Policy / Discrepancy Alerts:\n` + flagged.map(f => `  - #${f.id} ${f.vendor || 'Unknown'} ($${(Number(f.amount) || 0).toFixed(2)}): ${f.discrepancy || f.policy_flag}`).join('\n');
       }
       return out;
     }
     case 'check_policy': {
       const violations = [];
-      const d = a.date ? new Date(a.date + 'T00:00:00Z') : new Date();
-      const day = d.getUTCDay();
+      const d = a.date ? new Date(String(a.date) + 'T00:00:00Z') : new Date();
+      const day = !isNaN(d) ? d.getUTCDay() : -1;
+      const amt = Number(a.amount) || 0;
+      const tax = Number(a.tax) || 0;
+      const vendor = String(a.vendor || 'Unknown Merchant');
       if (day === 0 || day === 6) violations.push('Weekend transaction: Requires business purpose justification');
-      if (a.category === 'Meals' && a.amount > 75) violations.push(`Meal total ($${a.amount}) exceeds standard $75 corporate limit`);
-      if (a.category === 'Lodging' && a.amount > 300) violations.push(`Lodging ($${a.amount}) exceeds standard $300/night cap`);
-      if (a.notes && /alcohol|beer|wine|cocktail/i.test(a.notes)) violations.push('Alcohol detected: Personal payment or executive approval required');
-      if (!a.tax || a.tax === 0) violations.push('Missing tax info: Verify VAT/GST on receipt for deductible claim');
+      if (String(a.category || '').toLowerCase() === 'meals' && amt > 75) violations.push(`Meal total ($${amt.toFixed(2)}) exceeds standard $75 corporate limit`);
+      if (String(a.category || '').toLowerCase() === 'lodging' && amt > 300) violations.push(`Lodging ($${amt.toFixed(2)}) exceeds standard $300/night cap`);
+      if (a.notes && /alcohol|beer|wine|cocktail/i.test(String(a.notes))) violations.push('Alcohol detected: Personal payment or executive approval required');
+      if (!tax || tax === 0) violations.push('Missing tax info: Verify VAT/GST on receipt for deductible claim');
 
       if (!violations.length) {
-        return `✅ Policy Compliant: Expense of $${Number(a.amount).toFixed(2)} at ${a.vendor} passes all corporate spend policies.`;
+        return `✅ Policy Compliant: Expense of $${amt.toFixed(2)} at ${vendor} passes all corporate spend policies.`;
       }
-      return `⚠️ Policy Warnings for ${a.vendor} ($${Number(a.amount).toFixed(2)}):\n` + violations.map(v => `• ${v}`).join('\n') + `\nRecommendation: Flag item for manager review upon submission.`;
+      return `⚠️ Policy Warnings for ${vendor} ($${amt.toFixed(2)}):\n` + violations.map(v => `• ${v}`).join('\n') + `\nRecommendation: Flag item for manager review upon submission.`;
     }
     case 'batch_add_expenses': {
       const items = Array.isArray(a.expenses) ? a.expenses : [];
@@ -524,10 +592,10 @@ function callTool(user, name, a = {}) {
         try {
           const r = addExpense(user.id, item, 'claude', a.allow_duplicates === true);
           if (r.duplicateOf) {
-            skipped.push(`${item.vendor} ($${Number(item.amount).toFixed(2)}) - duplicate of #${r.duplicateOf.id}`);
+            skipped.push(`${item.vendor || 'Unknown'} ($${(Number(item.amount) || 0).toFixed(2)}) - duplicate of #${r.duplicateOf.id}`);
           } else {
             saved.push(r.expense);
-            totalSum += r.expense.amount;
+            totalSum += (Number(r.expense.amount) || 0);
           }
         } catch (err) {
           skipped.push(`${item.vendor || 'Unknown'} - Error: ${err.message}`);
@@ -536,7 +604,7 @@ function callTool(user, name, a = {}) {
       let out = `⚡ Batch Ingestion Complete: ${saved.length} saved, ${skipped.length} skipped.\n`;
       out += `• Total Ingested Volume: $${totalSum.toFixed(2)}\n`;
       if (saved.length) {
-        out += `\nSaved Receipts:\n` + saved.map(e => `  - #${e.id} ${e.date} ${e.vendor} ($${e.amount.toFixed(2)}) [${e.category}]`).join('\n');
+        out += `\nSaved Receipts:\n` + saved.map(e => `  - #${e.id} ${e.date || ''} ${e.vendor || ''} ($${(Number(e.amount) || 0).toFixed(2)}) [${e.category || 'Other'}]`).join('\n');
       }
       if (skipped.length) {
         out += `\n\nSkipped / Duplicate Items:\n` + skipped.map(s => `  - ${s}`).join('\n');
@@ -545,8 +613,8 @@ function callTool(user, name, a = {}) {
     }
     case 'tax_deduction_report': {
       let rows = mine(user.id);
-      if (a.month) rows = rows.filter(e => e.date.startsWith(a.month));
-      else if (a.year) rows = rows.filter(e => e.date.startsWith(a.year));
+      if (a.month) rows = rows.filter(e => String(e.date || '').startsWith(a.month));
+      else if (a.year) rows = rows.filter(e => String(e.date || '').startsWith(a.year));
       if (!rows.length) return `No expenses found for tax period ${a.month || a.year || 'all time'}.`;
 
       let fullDeductible = 0;
@@ -555,14 +623,16 @@ function callTool(user, name, a = {}) {
       let totalVatGst = 0;
 
       rows.forEach(e => {
-        totalVatGst += (e.tax || 0);
-        const cat = (e.category || '').toLowerCase();
+        const tax = Number(e.tax) || 0;
+        const amt = Number(e.amount) || 0;
+        totalVatGst += tax;
+        const cat = String(e.category || '').toLowerCase();
         if (cat === 'meals' || cat === 'food' || cat === 'entertainment') {
-          halfDeductible += e.amount;
+          halfDeductible += amt;
         } else if (cat === 'personal' || cat === 'fines') {
-          nonDeductible += e.amount;
+          nonDeductible += amt;
         } else {
-          fullDeductible += e.amount;
+          fullDeductible += amt;
         }
       });
 
@@ -586,23 +656,27 @@ function callTool(user, name, a = {}) {
     }
     case 'audit_anomalies': {
       let rows = mine(user.id);
-      if (a.month) rows = rows.filter(e => e.date.startsWith(a.month));
+      if (a.month) rows = rows.filter(e => String(e.date || '').startsWith(a.month));
       if (!rows.length) return `No transactions found to audit${a.month ? ` for ${a.month}` : ''}.`;
 
       const anomalies = [];
 
       // 1. Double billing detection: same vendor + same amount within 2 days
-      const sorted = rows.slice().sort((x, y) => x.date.localeCompare(y.date));
+      const sorted = rows.slice().sort((x, y) => String(x.date || '').localeCompare(String(y.date || '')));
       for (let i = 0; i < sorted.length; i++) {
         for (let j = i + 1; j < sorted.length; j++) {
           const a1 = sorted[i], a2 = sorted[j];
-          if (a1.vendor.toLowerCase() === a2.vendor.toLowerCase() && Math.abs(a1.amount - a2.amount) < 0.01) {
+          const v1 = String(a1.vendor || '').toLowerCase();
+          const v2 = String(a2.vendor || '').toLowerCase();
+          const amt1 = Number(a1.amount) || 0;
+          const amt2 = Number(a2.amount) || 0;
+          if (v1 && v1 === v2 && Math.abs(amt1 - amt2) < 0.01) {
             const diffDays = Math.abs(new Date(a2.date) - new Date(a1.date)) / (1000 * 60 * 60 * 24);
-            if (diffDays <= 2) {
+            if (!isNaN(diffDays) && diffDays <= 2) {
               anomalies.push({
                 risk: 'HIGH',
                 type: 'Potential Double Charge',
-                details: `${a1.vendor} charged $${a1.amount.toFixed(2)} on ${a1.date} (#${a1.id}) and again on ${a2.date} (#${a2.id})`
+                details: `${a1.vendor} charged $${amt1.toFixed(2)} on ${a1.date} (#${a1.id}) and again on ${a2.date} (#${a2.id})`
               });
             }
           }
@@ -612,13 +686,13 @@ function callTool(user, name, a = {}) {
       // 2. Structuring / Split transactions: same vendor on same date summing > $75
       const dayVendorGroups = {};
       rows.forEach(e => {
-        const key = `${e.date}__${e.vendor.toLowerCase()}`;
+        const key = `${e.date || ''}__${String(e.vendor || '').toLowerCase()}`;
         (dayVendorGroups[key] = dayVendorGroups[key] || []).push(e);
       });
       Object.entries(dayVendorGroups).forEach(([key, group]) => {
         if (group.length > 1) {
-          const sum = group.reduce((s, g) => s + g.amount, 0);
-          if (sum > 75 && group.every(g => g.amount <= 75)) {
+          const sum = group.reduce((s, g) => s + (Number(g.amount) || 0), 0);
+          if (sum > 75 && group.every(g => (Number(g.amount) || 0) <= 75)) {
             anomalies.push({
               risk: 'MEDIUM',
               type: 'Policy Evasion (Split Structuring)',
@@ -630,12 +704,15 @@ function callTool(user, name, a = {}) {
 
       // 3. Weekend transactions
       rows.forEach(e => {
-        const day = new Date(e.date + 'T00:00:00Z').getUTCDay();
+        if (!e.date) return;
+        const d = new Date(e.date + 'T00:00:00Z');
+        if (isNaN(d)) return;
+        const day = d.getUTCDay();
         if (day === 0 || day === 6) {
           anomalies.push({
             risk: 'LOW',
             type: 'Weekend Spend',
-            details: `#${e.id} ${e.vendor} ($${e.amount.toFixed(2)}) on ${e.date} (weekend)`
+            details: `#${e.id} ${e.vendor} ($${(Number(e.amount) || 0).toFixed(2)}) on ${e.date} (weekend)`
           });
         }
       });

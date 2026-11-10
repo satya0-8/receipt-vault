@@ -97,6 +97,26 @@ server.listen(0, async () => {
     const old = mcp; const nu = (await call('POST', '/api/rotate-token', {})).body.mcpUrl;
     assert.equal((await call('POST', old, { jsonrpc: '2.0', id: 1, method: 'ping' })).status, 401);
     mcp = new URL(nu).pathname; assert.equal((await rpc(1, 'ping')).status, 200);
+    // Test Claude's exact tool calls: limit: 500 and empty / all monthly_summary
+    const list500 = await tool('list_expenses', { limit: 500 });
+    assert.ok(!list500.isError && /match/.test(list500.content[0].text));
+
+    const sumEmpty = await tool('monthly_summary', {});
+    assert.ok(!sumEmpty.isError);
+
+    const sumAll = await tool('monthly_summary', { month: 'all' });
+    assert.ok(!sumAll.isError);
+
+    // Test UK date format and currency symbols (e.g. Cider Cellar receipt)
+    const cider = await tool('add_expense', {
+      vendor: 'The Cider Cellar',
+      date: '24/09/2018',
+      amount: '£4.50',
+      currency: '£',
+      tax: '£0.75',
+      notes: 'Price overrides and discounts on line items'
+    });
+    assert.ok(!cider.isError && cider.content[0].text.includes('2018-09-24') && cider.content[0].text.includes('GBP'));
 
     console.log('ALL TESTS PASSED');
   } catch (e) { console.error('FAIL', e); process.exitCode = 1; }
